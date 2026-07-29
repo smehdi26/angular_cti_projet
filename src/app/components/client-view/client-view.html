@@ -1,0 +1,97 @@
+<div class="container py-5" *ngIf="client">
+  <div class="mb-4">
+    <a [routerLink]="['/dashboard']" class="text-decoration-none text-secondary d-inline-flex align-items-center gap-2">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left: Profile Details Card -->
+    <div class="col-lg-5">
+      <div class="card p-4 border-0 shadow-sm bg-white">
+        <div class="text-center mb-4 pb-3 border-bottom">
+          <div class="bg-primary text-white p-3 rounded-circle d-inline-flex mb-3 align-items-center justify-content-center" style="width: 72px; height: 72px; font-size: 28px; font-weight: 700;">
+            <span>{{ client.name.substring(0, 1).toUpperCase() }}</span>
+          </div>
+          <h4 class="fw-bold mb-1">{{ client.name }}</h4>
+          <span class="text-muted small">{{ client.email }}</span>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-medium">Contact Numbers</label>
+          <div class="d-flex flex-wrap gap-2">
+            @for (phone of client.phones; track phone.phoneNumber) {
+              <span class="badge bg-light text-secondary border px-3 py-2 d-inline-flex align-items-center gap-2 fs-6">
+                <i class="bi bi-telephone text-primary"></i>
+                <span>{{ phone.phoneNumber }}</span>
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-medium">Notes & Description</label>
+          <div class="p-3 bg-light rounded-3 text-muted">
+            {{ client.description || 'No description notes available.' }}
+          </div>
+        </div>
+
+        <div class="d-grid gap-2">
+          <!-- Deep link route passing client ID directly to scheduler -->
+          <a [routerLink]="['/reservations']" [queryParams]="{ clientId: client.id }" class="btn btn-primary py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-calendar-event"></i> Book Reservation
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Meeting History Log -->
+    <div class="col-lg-7">
+      <div class="card p-4 border-0 shadow-sm bg-white h-100">
+        <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-primary"></i> Meeting & Reservation History
+        </h5>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Scheduled Date</th>
+                <th>Time</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (res of reservations; track res.id) {
+                <tr>
+                  <td>{{ res.reservationTime.substring(0, 10) }}</td>
+                  <td>{{ res.reservationTime.substring(11, 16) }}</td>
+                  <td class="text-muted small">{{ res.description || '-' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="{
+                      'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
+                      'bg-primary-subtle text-primary-emphasis': res.status === 'IN_PROGRESS',
+                      'bg-success-subtle text-success-emphasis': res.status === 'DONE',
+                      'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
+                    }">{{ res.status }}</span>
+                    <small *ngIf="res.status === 'CANCELLED' && res.cancellationReason" class="d-block text-danger small mt-1">
+                      Reason: {{ res.cancellationReason }}
+                    </small>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
+                    No meetings have been scheduled yet.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

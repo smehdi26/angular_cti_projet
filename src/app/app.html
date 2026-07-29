@@ -1,0 +1,38 @@
+<div class="d-flex">
+  <!-- Global Sidebar -->
+  <aside class="sidebar d-flex flex-column" *ngIf="showSidebar()">
+    <div class="px-4 py-4 d-flex align-items-center gap-3">
+      <div class="bg-primary p-2 rounded text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+        <i class="bi bi-shield-lock-fill fs-5"></i>
+      </div>
+      <div>
+        <h6 class="text-white mb-0 fw-bold">CTI Network</h6>
+        <small class="text-muted text-uppercase fw-semibold" style="font-size: 10px;">Workspace</small>
+      </div>
+    </div>
+    
+    <nav class="nav flex-column mt-3 flex-grow-1">
+      <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+      </a>
+      <a class="nav-link" [routerLink]="['/reservations']" routerLinkActive="active">
+        <i class="bi bi-calendar-event-fill"></i> Reservations
+      </a>
+      <a class="nav-link" [routerLink]="['/notifications']" routerLinkActive="active">
+        <i class="bi bi-bell-fill"></i> Notifications
+        <span *ngIf="unreadCount > 0" class="badge bg-danger ms-auto rounded-pill">{{ unreadCount }}</span>
+      </a>
+    </nav>
+    
+    <div class="p-3 border-top border-secondary">
+      <button (click)="logout()" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="bi bi-box-arrow-right"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Content Workspace Viewport -->
+  <main class="flex-grow-1" [style.margin-left]="showSidebar() ? '260px' : '0'" style="min-height: 100vh;">
+    <router-outlet></router-outlet>
+  </main>
+</div>

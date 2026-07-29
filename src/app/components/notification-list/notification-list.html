@@ -1,0 +1,52 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Notification Center</h3>
+      <p class="text-muted mb-0">System events log history</p>
+    </div>
+    
+    <!-- Show clear option if unread items are present -->
+    <button (click)="markAllAsRead()" class="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2">
+      <i class="bi bi-check-all"></i> Mark All as Read
+    </button>
+  </div>
+
+  <!-- Notification Logs Timeline List -->
+  <div class="d-flex flex-column gap-3">
+    @for (notif of notifications; track notif.id) {
+      <div class="card p-4 notif-item" 
+           [ngClass]="'notif-' + notif.type"
+           [style.opacity]="notif.readStatus ? '0.75' : '1'">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2 rounded-circle" 
+                 [ngClass]="{
+                   'bg-success-subtle text-success': notif.type === 'SUCCESS',
+                   'bg-danger-subtle text-danger': notif.type === 'DANGER',
+                   'bg-warning-subtle text-warning': notif.type === 'WARNING',
+                   'bg-primary-subtle text-primary': notif.type === 'INFO'
+                 }">
+              <i class="bi" [ngClass]="{
+                'bi-check-circle-fill': notif.type === 'SUCCESS',
+                'bi-x-circle-fill': notif.type === 'DANGER',
+                'bi-exclamation-triangle-fill': notif.type === 'WARNING',
+                'bi-info-circle-fill': notif.type === 'INFO'
+              }"></i>
+            </div>
+            <div>
+              <p class="mb-0 fw-medium text-dark">{{ notif.message }}</p>
+              <small class="text-muted">{{ notif.createdAt.substring(0, 16).replace('T', ' ') }}</small>
+            </div>
+          </div>
+          <span *ngIf="!notif.readStatus" class="badge bg-danger rounded-pill">New</span>
+        </div>
+      </div>
+    } @empty {
+      <div class="card p-5 text-center text-muted border-0 shadow-sm">
+        <i class="bi bi-bell-slash fs-1 d-block mb-3 text-muted"></i>
+        No system notifications logged yet.
+      </div>
+    }
+  </div>
+</div>

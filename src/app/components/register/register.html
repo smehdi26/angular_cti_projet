@@ -1,0 +1,68 @@
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 2rem 0;">
+  <div class="register-card p-4 p-md-5">
+    <div class="text-center mb-4">
+      <div class="bg-primary text-white p-2 rounded d-inline-flex mb-3">
+        <i class="bi bi-person-fill-add fs-3"></i>
+      </div>
+      <h4 class="fw-bold mb-1">Create Account</h4>
+      <p class="text-muted small">Register a new administrative workspace profile</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center gap-2 small py-2 rounded-3">
+      <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- First Name -->
+      <div class="mb-3">
+        <label class="form-label text-muted small fw-medium">First Name</label>
+        <input type="text" formControlName="firstName" class="form-control bg-light" placeholder="John"
+               [class.is-invalid]="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid">
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.hasError('required')">First name is required.</div>
+      </div>
+
+      <!-- Last Name -->
+      <div class="mb-3">
+        <label class="form-label text-muted small fw-medium">Last Name</label>
+        <input type="text" formControlName="lastName" class="form-control bg-light" placeholder="Doe"
+               [class.is-invalid]="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid">
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.hasError('required')">Last name is required.</div>
+      </div>
+
+      <!-- Email Address -->
+      <div class="mb-3">
+        <label class="form-label text-muted small fw-medium">Email Address</label>
+        <input type="email" formControlName="email" class="form-control bg-light" placeholder="john.doe@example.com"
+               [class.is-invalid]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('required')">Email is required.</div>
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('email')">Invalid email format.</div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3">
+        <label class="form-label text-muted small fw-medium">Password</label>
+        <input type="password" formControlName="password" class="form-control bg-light" placeholder="••••••••"
+               [class.is-invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('required')">Password is required.</div>
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('minlength')">Password must be at least 8 characters long.</div>
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('pattern')">Password must contain at least 1 uppercase letter, 1 number, and 1 special symbol.</div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-4">
+        <label class="form-label text-muted small fw-medium">Confirm Password</label>
+        <input type="password" formControlName="confirmPassword" class="form-control bg-light" placeholder="••••••••"
+               [class.is-invalid]="(registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.invalid) || (registerForm.touched && registerForm.hasError('mismatch'))">
+        <div class="text-danger small mt-1" *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.hasError('required')">Please confirm your password.</div>
+        <div class="text-danger small mt-1" *ngIf="registerForm.touched && registerForm.hasError('mismatch') && !registerForm.get('confirmPassword')?.hasError('required')">Passwords do not match.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 rounded-3 mb-3">Create Account</button>
+    </form>
+    
+    <div class="text-center">
+      <span class="text-muted small">Already have an account? <a [routerLink]="['/login']" class="text-decoration-none">Sign In</a></span>
+    </div>
+  </div>
+</div>

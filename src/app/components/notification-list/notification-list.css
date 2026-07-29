@@ -1,0 +1,7 @@
+.notif-item {
+    border-left: 4px solid #94a3b8;
+}
+.notif-SUCCESS { border-left-color: #10b981; }
+.notif-DANGER { border-left-color: #ef4444; }
+.notif-WARNING { border-left-color: #f59e0b; }
+.notif-INFO { border-left-color: #3b82f6; }

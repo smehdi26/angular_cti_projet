@@ -1,0 +1,197 @@
+<div class="container-fluid py-4">
+  <!-- Greeting -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Directory Workspace</h3>
+      <p class="text-muted mb-0">Overview of existing operations and client profiles</p>
+    </div>
+    <a [routerLink]="['/clients/add']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2">
+      <i class="bi bi-plus-lg"></i> Register New Client
+    </a>
+  </div>
+
+  <!-- KPI Metrics -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card p-4 bg-white shadow-sm border-0">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Client Profiles</span>
+            <h2 class="fw-bold text-dark mt-2 mb-0">{{ clients.length }}</h2>
+          </div>
+          <div class="bg-primary-subtle p-3 rounded text-primary">
+            <i class="bi bi-people-fill fs-3"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4 bg-white shadow-sm border-0">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Active Numbers</span>
+            <h2 class="fw-bold text-dark mt-2 mb-0">{{ totalPhones }}</h2>
+          </div>
+          <div class="bg-success-subtle p-3 rounded text-success">
+            <i class="bi bi-telephone-outbound-fill fs-3"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4 bg-white shadow-sm border-0">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Server Status</span>
+            <h2 class="fw-bold text-success mt-2 mb-0" style="font-size: 24px;">Connected</h2>
+          </div>
+          <div class="bg-info-subtle p-3 rounded text-info">
+            <i class="bi bi-database-check fs-3"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Panel -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body p-4 bg-white rounded">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-12">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0">
+              <i class="bi bi-search"></i>
+            </span>
+            <!-- Live Local Filter Binding -->
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" 
+                   class="form-control bg-light border-start-0 ps-0" 
+                   placeholder="Search directory instantly by name, email, phone number, or key description attributes...">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registry Table -->
+  <div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-list-task text-primary me-2"></i> Client Registry Data</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Email Address</th>
+              <th>Description</th>
+              <th>Active Contact Numbers</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Modern Angular 17 Control Flow -->
+            @for (client of filteredClients; track client.id) {
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded-circle text-center d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 600; color: #4f46e5;">
+                      <span>{{ client.name.substring(0, 1).toUpperCase() }}</span>
+                    </div>
+                    <span class="fw-medium text-dark">{{ client.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <a href="mailto:{{ client.email }}" class="text-decoration-none text-muted">{{ client.email }}</a>
+                </td>
+                <td class="text-muted small">{{ client.description || '-' }}</td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1">
+                    @for (phone of client.phones; track phone.phoneNumber) {
+                      <span class="badge bg-light text-secondary border d-flex align-items-center gap-1">
+                        <i class="bi bi-telephone text-primary"></i>
+                        <span>{{ phone.phoneNumber }}</span>
+                      </span>
+                    }
+                  </div>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group">
+                    <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-outline-info btn-sm px-3" title="View Profile">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a [routerLink]="['/clients', getPrimaryPhone(client), 'edit']" class="btn btn-outline-warning btn-sm px-3" title="Edit Profile">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button (click)="deleteClient(client)" class="btn btn-outline-danger btn-sm px-3" title="Delete Profile">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center text-muted py-5">
+                  <i class="bi bi-folder-x fs-1 d-block mb-3 text-muted"></i>
+                  No matching database records found for this directory.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Daily Agenda Summary Modal -->
+@if (todayReservationsCount > 0) {
+  <div class="modal fade" id="dailySummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow border-0 rounded-4">
+        <div class="modal-header bg-primary text-white border-0 py-3">
+          <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check-fill me-2"></i> Daily Agenda Summary</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+          <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+            <i class="bi bi-bell-fill fs-3 animate-bell"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Good Day Admin,</h5>
+          <p class="text-muted fs-5 mb-0">You have <strong class="text-primary">{{ todayReservationsCount }}</strong> active reservations scheduled for today.</p>
+        </div>
+        <div class="modal-footer border-0 pb-4 justify-content-center">
+          <!-- Triggers storage save on acknowledge click -->
+          <button type="button" (click)="acknowledgeDailySummary()" class="btn btn-primary px-4 rounded-3" data-bs-dismiss="modal">Acknowledge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Upcoming 1-Hour Alert Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050; margin-top: 60px;">
+  @for (alert of upcomingAlerts; track alert.id) {
+    <div class="toast show border-0 shadow-lg rounded-3 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header bg-warning text-dark border-0">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong class="me-auto">Action Required</strong>
+        <button type="button" class="btn-close" (click)="acknowledgeAlert(alert.id!)" aria-label="Close"></button>
+      </div>
+      <div class="toast-body bg-white rounded-bottom-3 p-3">
+        <p class="mb-3">
+          Please contact <strong>{{ alert.client?.name }}</strong> 
+          ({{ alert.client?.phones?.[0]?.phoneNumber || 'No Number' }}) 
+          for their upcoming appointment at <strong>{{ alert.reservationTime.substring(11, 16) }}</strong>.
+        </p>
+        <div class="d-flex justify-content-end align-items-center">
+          <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2 me-2" (click)="acknowledgeAlert(alert.id!)" style="font-size: 11px;">
+            <i class="bi bi-check-circle"></i> Acknowledge
+          </button>
+          <a [routerLink]="['/clients', getPrimaryPhone(alert.client)]" class="btn btn-xs btn-primary py-1 px-2 text-white" style="font-size: 11px;">
+            <i class="bi bi-telephone-fill me-1"></i> View Profile
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+</div>

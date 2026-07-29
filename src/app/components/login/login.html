@@ -1,0 +1,50 @@
+<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+  <div class="login-card p-4 p-md-5">
+    <div class="text-center mb-4">
+      <div class="bg-primary text-white p-2 rounded d-inline-flex mb-3">
+        <i class="bi bi-shield-lock-fill fs-3"></i>
+      </div>
+      <h4 class="fw-bold mb-1">Welcome Back</h4>
+      <p class="text-muted small">Sign in to your Administrative account</p>
+    </div>
+
+    <!-- Alert Notifications -->
+    <div th:if="${errorMessage}" *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center gap-2 small py-2 rounded-3">
+      <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+    </div>
+    <div th:if="${successMessage}" *ngIf="successMessage" class="alert alert-success d-flex align-items-center gap-2 small py-2 rounded-3">
+      <i class="bi bi-check-circle-fill"></i> {{ successMessage }}
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Email input -->
+      <div class="mb-3">
+        <label class="form-label text-muted small fw-medium">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-envelope"></i></span>
+          <input type="email" formControlName="email" class="form-control bg-light border-start-0 ps-0" placeholder="admin@cti-network.tn"
+                 [class.is-invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+        </div>
+        <div class="text-danger small mt-1" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('required')">Email is required.</div>
+        <div class="text-danger small mt-1" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('email')">Invalid email format.</div>
+      </div>
+
+      <!-- Password input -->
+      <div class="mb-4">
+        <label class="form-label text-muted small fw-medium">Password</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-key"></i></span>
+          <input type="password" formControlName="password" class="form-control bg-light border-start-0 ps-0" placeholder="••••••••"
+                 [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+        </div>
+        <div class="text-danger small mt-1" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.hasError('required')">Password is required.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 rounded-3 mb-3">Authenticate</button>
+    </form>
+    
+    <div class="text-center">
+      <span class="text-muted small">No workspace account? <a [routerLink]="['/register']" class="text-decoration-none">Sign Up</a></span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+.slot-row {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s;
+}
+.slot-row:hover {
+    background-color: #f8fafc;
+}
+.slot-booked {
+    background-color: #e2e8f0 !important;
+    color: #64748b;
+}
+.time-badge {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
