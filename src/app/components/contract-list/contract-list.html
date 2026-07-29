@@ -1,0 +1,101 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Contracts Directory</h3>
+      <p class="text-muted mb-0">Unified dashboard displaying maintenance agreements, signature dates, and visit frequencies</p>
+    </div>
+  </div>
+
+  <!-- Notion-style Search and Filter Form -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body bg-white rounded p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Text Search -->
+        <div class="col-md-7">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+            <input type="text" [(ngModel)]="keyword" (input)="onSearchAndFilter()" 
+                   class="form-control bg-light border-start-0 ps-0" placeholder="Search by contract, client name, signature date, months...">
+          </div>
+        </div>
+        <!-- Term Filter -->
+        <div class="col-md-3">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-funnel"></i></span>
+            <select [(ngModel)]="redevanceFilter" (change)="onSearchAndFilter()" class="form-select bg-light border-start-0 ps-0">
+              <option value="">Redevance: All</option>
+              <option value="ANNUELLE">ANNUELLE</option>
+              <option value="SEMESTRIELLE">SEMESTRIELLE</option>
+              <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
+            </select>
+          </div>
+        </div>
+        <!-- Reset -->
+        <div class="col-md-2">
+          <button (click)="keyword = ''; redevanceFilter = ''; onSearchAndFilter();" class="btn btn-light border w-100" title="Reset Filters">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contracts Registry Table Card -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th #colClient class="sortable" data-sort-dir="asc" (click)="sort(colClient)">Client Assignee <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colRedevance class="sortable" data-sort-dir="asc" (click)="sort(colRedevance)">Redevance <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colName class="sortable" data-sort-dir="asc" (click)="sort(colName)">Contrat Name <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colSignature class="sortable" data-sort-dir="asc" (click)="sort(colSignature)">D. Signature <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colVisits class="sortable text-center" data-sort-dir="asc" (click)="sort(colVisits)">N.D.V <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th>Months of Visits</th>
+              <th class="text-end" style="width: 140px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (contract of contracts; track contract.id) {
+              <tr>
+                <td>
+                  <!-- Dynamic RouterLink reference loading client profile directly -->
+                  <div class="d-flex align-items-center gap-2" *ngIf="contract.client">
+                    <a [routerLink]="['/clients', getPrimaryPhone(contract.client)]" class="fw-bold text-dark text-decoration-none">
+                      <i class="bi bi-person-fill text-muted"></i> <span>{{ contract.client.name }}</span>
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="{
+                    'bg-warning-subtle text-warning-emphasis': contract.redevance === 'TRIMESTRIELLE',
+                    'bg-primary-subtle text-primary-emphasis': contract.redevance === 'SEMESTRIELLE',
+                    'bg-success-subtle text-success-emphasis': contract.redevance === 'ANNUELLE'
+                  }">{{ contract.redevance }}</span>
+                </td>
+                <td class="fw-semibold text-dark">{{ contract.name }}</td>
+                <td>{{ contract.dateSignature }}</td>
+                <td class="text-center fw-bold">{{ contract.numberOfVisits }}</td>
+                <td class="text-muted small">{{ contract.monthsOfVisits || 'Not scheduled' }}</td>
+                <td class="text-end">
+                  <button (click)="deleteContract(contract.id!)" class="btn btn-sm btn-outline-danger" title="Terminate Contract">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                  <i class="bi bi-file-earmark-x fs-1 mb-2 d-block text-muted"></i>
+                  No active maintenance contracts matched the filters.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

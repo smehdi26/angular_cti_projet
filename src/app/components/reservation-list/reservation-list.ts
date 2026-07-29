@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReservationService, Reservation } from '../../services/reservation';
-import { NotificationService } from '../../services/notification'; // Add this
+import { NotificationService } from '../../services/notification';
 
 declare var bootstrap: any;
 declare var FullCalendar: any;
@@ -22,19 +22,18 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   statusFilter: string = '';
   currentView: string = 'list';
 
-  // Counts (pre-calculated to prevent view evaluation lags)
+  // Counts (pre-calculated to prevent UI lags)
   untreatedCount = 0;
   inprogressCount = 0;
   doneCount = 0;
   cancelledCount = 0;
 
-  // Selected reservation properties for the calendar popup details modal [1.2.1]
   selectedRes: any = null;
   calendar: any = null;
 
   constructor(
     private reservationService: ReservationService,
-    private notificationService: NotificationService // Add this
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -50,9 +49,7 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
       next: (data: Reservation[]) => {
         this.reservations = data;
         this.calculateStatusCounts();
-        if (this.currentView === 'calendar') {
-          this.updateCalendarEvents();
-        }
+        this.updateCalendarEvents(); // Automatically update calendar data source [1.2.6]
       },
       error: (err: any) => {
         console.error('Failed to load reservations', err);
@@ -77,9 +74,10 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   switchView(viewName: string): void {
     this.currentView = viewName;
     if (viewName === 'calendar' && this.calendar) {
+      // Small timeout allows the container's d-none to be removed before calculating size [1.1.8]
       setTimeout(() => {
-        this.calendar.render();
-        this.updateCalendarEvents();
+        this.calendar.updateSize();   // FORCES FullCalendar to recalculate its dimensions [1.1.8]
+        this.updateCalendarEvents(); // Refreshes events securely
       }, 50);
     }
   }
@@ -95,7 +93,7 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     if (status === 'CANCELLED') {
       const promptVal = prompt("Enter the reason for cancelling this reservation (optional):");
       if (promptVal === null) {
-        selectElement.value = res.status; // Revert select value
+        selectElement.value = res.status;
         return;
       }
       reason = promptVal;
@@ -104,7 +102,7 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     this.reservationService.updateStatus(res.id!, status, reason).subscribe({
       next: () => {
         this.loadReservations();
-        this.notificationService.updateUnreadCount(); // Add this: Syncs sidebar badge instantly [1.2.6]
+        this.notificationService.updateUnreadCount();
       },
       error: (err: any) => {
         console.error('Failed to update status', err);
@@ -113,7 +111,6 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     });
   }
 
-  // Calendar Engine Initialization
   initCalendar(): void {
     const calendarEl = document.getElementById('calendar-view');
     if (calendarEl && (window as any).FullCalendar) {
@@ -136,14 +133,16 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
           }
         }
       });
+      this.calendar.render();
     }
   }
 
+  // Maps events directly from local memory (No DOM query selectors or Thymeleaf needed) [1.2.6]
   updateCalendarEvents(): void {
     if (!this.calendar) return;
 
     const events = this.reservations.map(res => ({
-      id: res.id?.toString(),
+      id: res.client ? res.client.id?.toString() : '',
       title: res.client ? res.client.name : 'Unknown',
       start: res.reservationTime,
       extendedProps: {

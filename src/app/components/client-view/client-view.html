@@ -7,7 +7,7 @@
 
   <div class="row g-4">
     <!-- Left: Profile Details Card -->
-    <div class="col-lg-5">
+    <div class="col-lg-4">
       <div class="card p-4 border-0 shadow-sm bg-white">
         <div class="text-center mb-4 pb-3 border-bottom">
           <div class="bg-primary text-white p-3 rounded-circle d-inline-flex mb-3 align-items-center justify-content-center" style="width: 72px; height: 72px; font-size: 28px; font-weight: 700;">
@@ -37,7 +37,6 @@
         </div>
 
         <div class="d-grid gap-2">
-          <!-- Deep link route passing client ID directly to scheduler -->
           <a [routerLink]="['/reservations']" [queryParams]="{ clientId: client.id }" class="btn btn-primary py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-calendar-event"></i> Book Reservation
           </a>
@@ -45,14 +44,26 @@
       </div>
     </div>
 
-    <!-- Right: Meeting History Log -->
-    <div class="col-lg-7">
+    <!-- Right: Tabbed Timeline Log -->
+    <div class="col-lg-8">
       <div class="card p-4 border-0 shadow-sm bg-white h-100">
-        <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
-          <i class="bi bi-clock-history text-primary"></i> Meeting & Reservation History
-        </h5>
+        
+        <!-- Tab Selectors -->
+        <ul class="nav nav-tabs mb-4 border-bottom pb-1">
+          <li class="nav-item">
+            <button class="nav-link fw-semibold" [class.active]="activeTab === 'meetings'" (click)="activeTab = 'meetings'">
+              <i class="bi bi-clock-history me-1"></i> Meeting History
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link fw-semibold" [class.active]="activeTab === 'contracts'" (click)="activeTab = 'contracts'">
+              <i class="bi bi-file-earmark-text me-1"></i> Maintenance Contracts
+            </button>
+          </li>
+        </ul>
 
-        <div class="table-responsive">
+        <!-- TAB 1: MEETINGS LOG -->
+        <div *ngIf="activeTab === 'meetings'" class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
@@ -75,22 +86,121 @@
                       'bg-success-subtle text-success-emphasis': res.status === 'DONE',
                       'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
                     }">{{ res.status }}</span>
-                    <small *ngIf="res.status === 'CANCELLED' && res.cancellationReason" class="d-block text-danger small mt-1">
-                      Reason: {{ res.cancellationReason }}
-                    </small>
                   </td>
                 </tr>
               } @empty {
                 <tr>
                   <td colspan="4" class="text-center text-muted py-5">
                     <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
-                    No meetings have been scheduled yet.
+                    No meetings scheduled yet.
                   </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
+
+        <!-- TAB 2: CONTRACTS LOG (Document Format) [1.1.3] -->
+        <div *ngIf="activeTab === 'contracts'">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small fw-semibold">Contract Registry List</span>
+            <a [routerLink]="['/contracts/add']" [queryParams]="{ clientId: client.id }" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+              <i class="bi bi-file-plus"></i> + Add Contract
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Redevance</th>
+                  <th>Contrat Name</th>
+                  <th>D. Signature</th>
+                  <th class="text-center">N.D.V</th>
+                  <th>Months of Visits</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (contract of contracts; track contract.id) {
+                  <tr>
+                    <td>
+                      <span class="badge" [ngClass]="{
+                        'bg-warning-subtle text-warning-emphasis': contract.redevance === 'TRIMESTRIELLE',
+                        'bg-primary-subtle text-primary-emphasis': contract.redevance === 'SEMESTRIELLE',
+                        'bg-success-subtle text-success-emphasis': contract.redevance === 'ANNUELLE'
+                      }">{{ contract.redevance }}</span>
+                    </td>
+                    <td class="fw-semibold text-dark">{{ contract.name }}</td>
+                    <td>{{ contract.dateSignature }}</td>
+                    <!-- Number of Visits (Calculated N.D.V) -->
+                    <td class="text-center fw-bold">{{ contract.numberOfVisits }}</td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <span>{{ contract.monthsOfVisits || 'Not scheduled yet' }}</span>
+                        <!-- In-place scheduler modal trigger -->
+                        <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0" (click)="openScheduleModal(contract)" title="Schedule Months">
+                          <i class="bi bi-calendar-check text-primary fs-5"></i>
+                        </button>
+                      </div>
+                    </td>
+                    <td class="text-end">
+                      <button (click)="deleteContract(contract.id!)" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-5">
+                      <i class="bi bi-file-earmark-x fs-2 mb-2 d-block text-muted"></i>
+                      No maintenance contracts registered.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SCHEDULE VISIT MONTHS IN PLACE [1.2.1] -->
+<div class="modal fade" id="scheduleMonthsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow border-0 rounded-4" *ngIf="selectedContract">
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Months</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small mb-4">
+          Please assign exactly <strong>{{ selectedContract.numberOfVisits }}</strong> scheduled months in chronological order for 
+          <strong>{{ selectedContract.name }}</strong> [1.1.4].
+        </p>
+
+        <!-- Dynamically generates exactly N dropdowns tracked safely by index -->
+        <div class="d-flex flex-column gap-3">
+          <!-- Added trackBy: trackByIndex below [1.2.6] -->
+          <div *ngFor="let monthVal of selectedMonths; let i = index; trackBy: trackByIndex" class="row align-items-center">
+            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Month</label>
+            <div class="col-sm-8">
+              <!-- Added unique name attribute below [1.2.6] -->
+              <select [(ngModel)]="selectedMonths[i]" [name]="'visit-month-' + i" class="form-select bg-light">
+                <!-- Removed 'disabled' below to allow clean empty-state binding -->
+                <option value="">-- Select Month --</option> 
+                <option *ngFor="let m of monthsList" [value]="m">{{ m }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
+        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Months</button>
+        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>

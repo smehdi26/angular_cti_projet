@@ -7,7 +7,9 @@ import { ClientEditComponent } from './components/client-edit/client-edit';
 import { ClientViewComponent } from './components/client-view/client-view';
 import { ReservationListComponent } from './components/reservation-list/reservation-list';
 import { ReservationScheduleComponent } from './components/reservation-schedule/reservation-schedule';
-import { NotificationListComponent } from './components/notification-list/notification-list'; // Import this
+import { NotificationListComponent } from './components/notification-list/notification-list';
+import { ContractAddComponent } from './components/contract-add/contract-add';
+import { ContractListComponent } from './components/contract-list/contract-list'; // Import this
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -25,5 +27,9 @@ export const routes: Routes = [
   { path: 'reservations/schedule', component: ReservationScheduleComponent },
 
   // Notification pathways
-  { path: 'notifications', component: NotificationListComponent } // Register this route
+  { path: 'notifications', component: NotificationListComponent },
+
+  // Contract pathways
+  { path: 'contracts', component: ContractListComponent }, // Register this route
+  { path: 'contracts/add', component: ContractAddComponent }
 ];
