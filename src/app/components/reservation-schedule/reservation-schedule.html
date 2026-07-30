@@ -96,6 +96,19 @@
               <input type="text" class="form-control bg-light" [value]="selectedDate" disabled>
             </div>
 
+            <!-- Reservation Name/Title -->
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-medium">Reservation Title / Name</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-tag"></i></span>
+                <input type="text" formControlName="name" class="form-control" placeholder="e.g. Monthly Site Audit"
+                       [class.is-invalid]="bookingForm.get('name')?.touched && bookingForm.get('name')?.invalid" required>
+              </div>
+              <div class="text-danger small mt-1" *ngIf="bookingForm.get('name')?.touched && bookingForm.get('name')?.hasError('required')">
+                Reservation title is required.
+              </div>
+            </div>
+
             <!-- Time Input -->
             <div class="mb-3">
               <label class="form-label text-muted small fw-medium">Allocated Start Time</label>

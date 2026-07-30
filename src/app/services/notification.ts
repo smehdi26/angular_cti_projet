@@ -47,4 +47,11 @@ export class NotificationService {
       error: (err: any) => console.error('Failed to update unread count', err)
     });
   }
+
+  // DELETE a single notification from history
+  deleteNotification(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      tap(() => this.updateUnreadCount()) // Sync global sidebar badge [1.2.6]
+    );
+  }
 }

@@ -1,17 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Added Import for ngModel inside modal
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClientService, Client } from '../../services/client';
 import { ContractService, Contract } from '../../services/contract';
+import { ReservationService } from '../../services/reservation'; // Import ReservationService [1.2.1]
 import { NotificationService } from '../../services/notification';
 
-declare var bootstrap: any;
+declare var bootstrap: any; // ADDED: Declares the global Bootstrap variable [1.2.6]
+
 
 @Component({
   selector: 'app-client-view',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule], // Added FormsModule
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './client-view.html',
   styleUrls: ['./client-view.css']
 })
@@ -25,7 +27,7 @@ export class ClientViewComponent implements OnInit {
 
   // Modal Properties
   selectedContract: Contract | null = null;
-  selectedMonths: string[] = []; // Array size matches contract.numberOfVisits exactly
+  selectedMonths: string[] = [];
   monthsList: string[] = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -34,6 +36,7 @@ export class ClientViewComponent implements OnInit {
   constructor(
     private clientService: ClientService,
     private contractService: ContractService,
+    private reservationService: ReservationService, // Inject ReservationService [1.2.1]
     private notificationService: NotificationService,
     private route: ActivatedRoute
   ) { }
@@ -94,17 +97,41 @@ export class ClientViewComponent implements OnInit {
     }
   }
 
-  // Open Scheduler modal and initialize the exact visit slots [1.2.1]
+  // Handle in-profile manual status changes [1.2.6]
+  updateStatus(res: any, selectElement: HTMLSelectElement): void {
+    const status = selectElement.value;
+    let reason = '';
+
+    if (status === 'CANCELLED') {
+      const promptVal = prompt("Enter the reason for cancelling this reservation (optional):");
+      if (promptVal === null) {
+        selectElement.value = res.status; // Revert selection
+        return;
+      }
+      reason = promptVal;
+    }
+
+    this.reservationService.updateStatus(res.id, status, reason).subscribe({
+      next: () => {
+        this.loadReservations(); // Reload meeting log instantly [1.2.6]
+        this.notificationService.updateUnreadCount(); // Update sidebar unread badge
+      },
+      error: (err: any) => {
+        console.error('Failed to update status', err);
+        selectElement.value = res.status; // Revert on failure
+      }
+    });
+  }
+
   openScheduleModal(contract: Contract): void {
     this.selectedContract = contract;
     
-    // Parse existing months if present (e.g. "Mars, Juin" -> ["Mars", "Juin"])
     const existing = contract.monthsOfVisits ? contract.monthsOfVisits.split(', ') : [];
     const visitsCount = contract.numberOfVisits || 0;
 
     this.selectedMonths = [];
     for (let i = 0; i < visitsCount; i++) {
-      this.selectedMonths.push(existing[i] || ''); // Fill existing or empty string
+      this.selectedMonths.push(existing[i] || '');
     }
 
     const modalEl = document.getElementById('scheduleMonthsModal');
@@ -117,18 +144,14 @@ export class ClientViewComponent implements OnInit {
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;
 
-    // Filter out empty selections to only capture the months you have filled so far
     const filledMonths = this.selectedMonths.filter(m => m && m.trim() !== '');
-
-    // Convert only the filled selections into a clean comma-separated string
     const monthsString = filledMonths.join(', ');
 
     this.contractService.updateContractSchedule(this.selectedContract.id, monthsString).subscribe({
       next: () => {
-        this.loadContracts(); // Refresh client-view table state instantly
+        this.loadContracts();
         this.notificationService.updateUnreadCount();
         
-        // Hide Modal programmatically
         const modalEl = document.getElementById('scheduleMonthsModal');
         if (modalEl) {
           const modal = bootstrap.Modal.getInstance(modalEl);
@@ -139,7 +162,6 @@ export class ClientViewComponent implements OnInit {
     });
   }
 
-  // Tracks primitive arrays safely by their index to prevent visual dropdown cloning [1.2.6]
   trackByIndex(index: number): number {
     return index;
   }

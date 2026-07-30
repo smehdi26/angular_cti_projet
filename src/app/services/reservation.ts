@@ -5,6 +5,7 @@ import { Client } from './client';
 
 export interface Reservation {
   id?: number;
+  name: string; // Added field
   client: Client;
   reservationTime: string;
   description?: string;
@@ -21,6 +22,7 @@ export interface TimeSlot {
 }
 
 export interface BookingRequest {
+  name: string; // Added field
   clientId: number;
   date: string;
   time: string;

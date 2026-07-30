@@ -44,6 +44,7 @@ export class ReservationScheduleComponent implements OnInit {
 
     // 3. Initialize the booking form
     this.bookingForm = this.fb.group({
+      name: ['', [Validators.required]], // Added validation rule
       date: [this.selectedDate, [Validators.required]],
       time: ['', [Validators.required]],
       clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
@@ -111,6 +112,7 @@ export class ReservationScheduleComponent implements OnInit {
 
     const formValue = this.bookingForm.value;
     const request: BookingRequest = {
+      name: formValue.name, // Map the name
       clientId: Number(formValue.clientId),
       date: formValue.date,
       time: formValue.time,

@@ -37,6 +37,7 @@
         </div>
 
         <div class="d-grid gap-2">
+          <!-- Deep link route passing client ID directly to scheduler -->
           <a [routerLink]="['/reservations']" [queryParams]="{ clientId: client.id }" class="btn btn-primary py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-calendar-event"></i> Book Reservation
           </a>
@@ -62,35 +63,55 @@
           </li>
         </ul>
 
-        <!-- TAB 1: MEETINGS LOG -->
+        <!-- TAB 1: MEETINGS LOG (With active in-place status controller and scheduler redirect) [1.1.3] -->
         <div *ngIf="activeTab === 'meetings'" class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
+                <th>Reservation Title</th>
                 <th>Scheduled Date</th>
                 <th>Time</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th class="text-end" style="width: 140px;">Actions</th> <!-- Added Column Header -->
               </tr>
             </thead>
             <tbody>
               @for (res of reservations; track res.id) {
                 <tr>
+                  <td class="fw-bold text-dark">{{ res.name }}</td>
                   <td>{{ res.reservationTime.substring(0, 10) }}</td>
                   <td>{{ res.reservationTime.substring(11, 16) }}</td>
                   <td class="text-muted small">{{ res.description || '-' }}</td>
                   <td>
-                    <span class="badge" [ngClass]="{
+                    <span class="badge mb-1" [ngClass]="{
                       'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
                       'bg-primary-subtle text-primary-emphasis': res.status === 'IN_PROGRESS',
                       'bg-success-subtle text-success-emphasis': res.status === 'DONE',
                       'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
                     }">{{ res.status }}</span>
+                    <small *ngIf="res.status === 'CANCELLED' && res.cancellationReason" class="d-block text-danger small mt-1">
+                      Reason: {{ res.cancellationReason }}
+                    </small>
+                  </td>
+                  <!-- Added Actions Cell [1.1.3, 1.1.4] -->
+                  <td class="text-end">
+                    <div class="d-flex flex-column gap-2 align-items-end">
+                      <select #statusSelect (change)="updateStatus(res, statusSelect)" class="form-select form-select-sm">
+                        <option value="UNTREATED" [selected]="res.status === 'UNTREATED'">Untreated</option>
+                        <option value="IN_PROGRESS" [selected]="res.status === 'IN_PROGRESS'">In Progress</option>
+                        <option value="DONE" [selected]="res.status === 'DONE'">Done</option>
+                        <option value="CANCELLED" [selected]="res.status === 'CANCELLED'">Cancelled</option>
+                      </select>
+                      <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: client.id, description: res.description }" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 11px;">
+                        <i class="bi bi-arrow-repeat"></i> Reschedule
+                      </a>
+                    </div>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="4" class="text-center text-muted py-5">
+                  <td colspan="6" class="text-center text-muted py-5">
                     <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
                     No meetings scheduled yet.
                   </td>
@@ -182,15 +203,12 @@
           <strong>{{ selectedContract.name }}</strong> [1.1.4].
         </p>
 
-        <!-- Dynamically generates exactly N dropdowns tracked safely by index -->
+        <!-- Dynamically generates exactly N dropdowns based on the calculated N.D.V array size -->
         <div class="d-flex flex-column gap-3">
-          <!-- Added trackBy: trackByIndex below [1.2.6] -->
           <div *ngFor="let monthVal of selectedMonths; let i = index; trackBy: trackByIndex" class="row align-items-center">
             <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Month</label>
             <div class="col-sm-8">
-              <!-- Added unique name attribute below [1.2.6] -->
               <select [(ngModel)]="selectedMonths[i]" [name]="'visit-month-' + i" class="form-select bg-light">
-                <!-- Removed 'disabled' below to allow clean empty-state binding -->
                 <option value="">-- Select Month --</option> 
                 <option *ngFor="let m of monthsList" [value]="m">{{ m }}</option>
               </select>
