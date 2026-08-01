@@ -1,7 +1,7 @@
 <div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-lg-7">
-      <div class="card p-4 p-md-5 border-0 shadow-sm">
+    <div class="col-lg-8">
+      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white">
         <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
           <div class="bg-primary text-white p-2 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
             <i class="bi bi-person-fill-add fs-4"></i>
@@ -16,14 +16,16 @@
 
         <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
           
+          <h6 class="fw-bold text-muted small text-uppercase mb-3">Required Credentials</h6>
+
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Client Name</label>
-            <input type="text" formControlName="name" class="form-control bg-light" placeholder="Jane Doe"
+            <input type="text" formControlName="name" class="form-control bg-light" placeholder="e.g. LE MOTEUR STANDARD"
                    [class.is-invalid]="clientForm.get('name')?.touched && clientForm.get('name')?.invalid">
             <div class="text-danger small mt-1" *ngIf="clientForm.get('name')?.touched && clientForm.get('name')?.hasError('required')">Name is required.</div>
           </div>
 
-          <div class="mb-3">
+          <div class="mb-4">
             <label class="form-label text-muted small fw-medium">Email Address</label>
             <input type="email" formControlName="email" class="form-control bg-light" placeholder="jane@example.com"
                    [class.is-invalid]="clientForm.get('email')?.touched && clientForm.get('email')?.invalid">
@@ -31,9 +33,44 @@
             <div class="text-danger small mt-1" *ngIf="clientForm.get('email')?.touched && clientForm.get('email')?.hasError('email')">Invalid email format.</div>
           </div>
 
+          <!-- OPTIONAL INFORMATION PANEL [1.2.6] -->
+          <h6 class="fw-bold text-muted small text-uppercase mb-3 mt-4 pt-2 border-top">Optional Information (Optional)</h6>
+          
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small fw-medium">Legal Representative (Contact)</label>
+              <input type="text" formControlName="contact" class="form-control bg-light" placeholder="e.g. Selmi Mehdi">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small fw-medium">Business Sector</label>
+              <select formControlName="sectorId" class="form-select bg-light">
+                <option value="">-- Select Sector --</option>
+                @for (sector of sectors; track sector.id) {
+                  <option [value]="sector.id">{{ sector.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small fw-medium">Physical Address</label>
+              <input type="text" formControlName="address" class="form-control bg-light" placeholder="e.g. Megrine, Riadh">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small fw-medium">City</label>
+              <input type="text" formControlName="city" class="form-control bg-light" placeholder="e.g. Ben Arous">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-medium">Website URL</label>
+            <input type="text" formControlName="website" class="form-control bg-light" placeholder="e.g. www.moteurstandard.com">
+          </div>
+
           <div class="mb-4">
             <label class="form-label text-muted small fw-medium">Description / Notes</label>
-            <textarea formControlName="description" class="form-control bg-light" rows="3" placeholder="Key details..."></textarea>
+            <textarea formControlName="description" class="form-control bg-light" rows="3" placeholder="Key service details, preferences..."></textarea>
           </div>
 
           <!-- Dynamic Phone List -->

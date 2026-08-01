@@ -82,6 +82,7 @@
         <table class="table table-hover align-middle mb-0">
           <thead>
             <tr>
+              <th style="width: 110px;">Client Code</th> <!-- Added Column Header -->
               <th>Client Name</th>
               <th>Email Address</th>
               <th>Description</th>
@@ -93,6 +94,10 @@
             <!-- Modern Angular 17 Control Flow -->
             @for (client of filteredClients; track client.id) {
               <tr>
+                <td>
+                  <!-- Displays the auto-generated client code -->
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
+                </td>
                 <td>
                   <div class="d-flex align-items-center gap-3">
                     <div class="bg-light p-2 rounded-circle text-center d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 600; color: #4f46e5;">

@@ -1,4 +1,5 @@
 <div class="container py-5" *ngIf="client">
+  <!-- Back to Dashboard Navigation -->
   <div class="mb-4">
     <a [routerLink]="['/dashboard']" class="text-decoration-none text-secondary d-inline-flex align-items-center gap-2">
       <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -6,17 +7,52 @@
   </div>
 
   <div class="row g-4">
-    <!-- Left: Profile Details Card -->
+    <!-- Left Column: Client Core Card with Metadata -->
     <div class="col-lg-4">
       <div class="card p-4 border-0 shadow-sm bg-white">
         <div class="text-center mb-4 pb-3 border-bottom">
+          <!-- Client Profile Initial -->
           <div class="bg-primary text-white p-3 rounded-circle d-inline-flex mb-3 align-items-center justify-content-center" style="width: 72px; height: 72px; font-size: 28px; font-weight: 700;">
             <span>{{ client.name.substring(0, 1).toUpperCase() }}</span>
           </div>
-          <h4 class="fw-bold mb-1">{{ client.name }}</h4>
-          <span class="text-muted small">{{ client.email }}</span>
+          <!-- Client Name and Unique Code Badge [1.1.2] -->
+          <h4 class="fw-bold mb-1">
+            {{ client.name }} 
+            <span class="badge bg-secondary ms-2" style="font-size: 13px;">{{ client.clientCode }}</span>
+          </h4>
+          <span class="text-muted small d-block mb-3">{{ client.email }}</span>
+
+          <!-- OPTIONAL INFORMATION METADATA LIST [1.2.1, 1.2.6] -->
+          <div class="mt-4 pt-3 border-top text-start">
+            <h6 class="fw-bold text-muted mb-3 small text-uppercase">Profile Metadata</h6>
+            <div class="d-flex flex-column gap-2 small">
+              <!-- Sector -->
+              <div *ngIf="client.sector" class="d-flex justify-content-between">
+                <span class="text-muted">Business Sector:</span>
+                <strong class="text-dark">{{ client.sector.name }}</strong>
+              </div>
+              <!-- Legal Representative -->
+              <div *ngIf="client.contact" class="d-flex justify-content-between">
+                <span class="text-muted">Legal Representative:</span>
+                <strong class="text-dark">{{ client.contact }}</strong>
+              </div>
+              <!-- Website link -->
+              <div *ngIf="client.website" class="d-flex justify-content-between">
+                <span class="text-muted">Website:</span>
+                <a [href]="client.website.startsWith('http') ? client.website : 'https://' + client.website" target="_blank" class="text-decoration-none fw-bold">
+                  {{ client.website }} <i class="bi bi-box-arrow-up-right small"></i>
+                </a>
+              </div>
+              <!-- Physical Location -->
+              <div *ngIf="client.address || client.city" class="d-flex justify-content-between">
+                <span class="text-muted">Location:</span>
+                <strong class="text-dark">{{ (client.address ? client.address + ', ' : '') + (client.city || '') }}</strong>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- Contact Numbers badges -->
         <div class="mb-3">
           <label class="form-label text-muted small fw-medium">Contact Numbers</label>
           <div class="d-flex flex-wrap gap-2">
@@ -29,6 +65,7 @@
           </div>
         </div>
 
+        <!-- Notes -->
         <div class="mb-4">
           <label class="form-label text-muted small fw-medium">Notes & Description</label>
           <div class="p-3 bg-light rounded-3 text-muted">
@@ -37,7 +74,6 @@
         </div>
 
         <div class="d-grid gap-2">
-          <!-- Deep link route passing client ID directly to scheduler -->
           <a [routerLink]="['/reservations']" [queryParams]="{ clientId: client.id }" class="btn btn-primary py-2 rounded-3 d-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-calendar-event"></i> Book Reservation
           </a>
@@ -45,7 +81,7 @@
       </div>
     </div>
 
-    <!-- Right: Tabbed Timeline Log -->
+    <!-- Right Column: Tabbed Workspace Timeline Log -->
     <div class="col-lg-8">
       <div class="card p-4 border-0 shadow-sm bg-white h-100">
         
@@ -63,7 +99,7 @@
           </li>
         </ul>
 
-        <!-- TAB 1: MEETINGS LOG (With active in-place status controller and scheduler redirect) [1.1.3] -->
+        <!-- TAB 1: MEETINGS LOG (With active status editor and scheduler redirect) [1.1.3] -->
         <div *ngIf="activeTab === 'meetings'" class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
@@ -73,7 +109,7 @@
                 <th>Time</th>
                 <th>Description</th>
                 <th>Status</th>
-                <th class="text-end" style="width: 140px;">Actions</th> <!-- Added Column Header -->
+                <th class="text-end" style="width: 140px;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +118,7 @@
                   <td class="fw-bold text-dark">{{ res.name }}</td>
                   <td>{{ res.reservationTime.substring(0, 10) }}</td>
                   <td>{{ res.reservationTime.substring(11, 16) }}</td>
-                  <td class="text-muted small">{{ res.description || '-' }}</td>
+                  <td class="text-muted small" th:text="${res.description}">{{ res.description || '-' }}</td>
                   <td>
                     <span class="badge mb-1" [ngClass]="{
                       'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
@@ -94,7 +130,7 @@
                       Reason: {{ res.cancellationReason }}
                     </small>
                   </td>
-                  <!-- Added Actions Cell [1.1.3, 1.1.4] -->
+                  <!-- In-profile actions cell [1.1.4, 1.2.6] -->
                   <td class="text-end">
                     <div class="d-flex flex-column gap-2 align-items-end">
                       <select #statusSelect (change)="updateStatus(res, statusSelect)" class="form-select form-select-sm">
@@ -199,11 +235,11 @@
       </div>
       <div class="modal-body p-4">
         <p class="text-muted small mb-4">
-          Please assign exactly <strong>{{ selectedContract.numberOfVisits }}</strong> scheduled months in chronological order for 
+          Please assign up to <strong>{{ selectedContract.numberOfVisits }}</strong> scheduled months in chronological order for 
           <strong>{{ selectedContract.name }}</strong> [1.1.4].
         </p>
 
-        <!-- Dynamically generates exactly N dropdowns based on the calculated N.D.V array size -->
+        <!-- Dynamically generates exactly N dropdowns based on the calculated N.D.V array size [1.2.6] -->
         <div class="d-flex flex-column gap-3">
           <div *ngFor="let monthVal of selectedMonths; let i = index; trackBy: trackByIndex" class="row align-items-center">
             <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Month</label>

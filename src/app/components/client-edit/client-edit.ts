@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClientService } from '../../services/client';
+import { SectorService } from '../../services/sector'; // Import SectorService
+import { Sector } from '../../services/client';
 
 @Component({
   selector: 'app-client-edit',
@@ -14,12 +16,14 @@ import { ClientService } from '../../services/client';
 export class ClientEditComponent implements OnInit {
 
   clientForm!: FormGroup;
+  sectors: Sector[] = [];
   originalPhone: string = '';
   errorMessage: string = '';
 
   constructor(
     private fb: FormBuilder,
     private clientService: ClientService,
+    private sectorService: SectorService, // Inject SectorService
     private route: ActivatedRoute,
     private router: Router
   ) { }
@@ -32,10 +36,26 @@ export class ClientEditComponent implements OnInit {
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       description: [''],
+      // Optional fields [1.2.6]
+      address: [''],
+      city: [''],
+      contact: [''],
+      website: [''],
+      sectorId: [''],
       phones: this.fb.array([])
     });
 
-    this.loadClientData();
+    this.loadSectors();
+  }
+
+  loadSectors(): void {
+    this.sectorService.getActiveSectors().subscribe({
+      next: (data: Sector[]) => {
+        this.sectors = data;
+        this.loadClientData(); // Load client data after sectors load to ensure correct binding
+      },
+      error: (err: any) => console.error('Failed to load active sectors', err)
+    });
   }
 
   get phones(): FormArray {
@@ -67,10 +87,15 @@ export class ClientEditComponent implements OnInit {
           id: client.id,
           name: client.name,
           email: client.email,
-          description: client.description
+          description: client.description,
+          // Bind optional fields [1.2.6]
+          address: client.address,
+          city: client.city,
+          contact: client.contact,
+          website: client.website,
+          sectorId: client.sector ? client.sector.id : ''
         });
 
-        // Map phone arrays
         if (client.phones) {
           client.phones.forEach(p => this.addPhoneField(p.phoneNumber));
         }
@@ -94,6 +119,11 @@ export class ClientEditComponent implements OnInit {
       name: formValue.name,
       email: formValue.email,
       description: formValue.description,
+      address: formValue.address || undefined, // Changed from null
+      city: formValue.city || undefined,       // Changed from null
+      contact: formValue.contact || undefined,   // Changed from null
+      website: formValue.website || undefined,   // Changed from null
+      sectorId: formValue.sectorId ? Number(formValue.sectorId) : undefined, // Changed from null
       phones: formValue.phones.map((p: any) => p.phoneNumber)
     };
 
