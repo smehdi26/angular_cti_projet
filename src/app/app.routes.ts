@@ -12,6 +12,8 @@ import { ContractAddComponent } from './components/contract-add/contract-add';
 import { ContractListComponent } from './components/contract-list/contract-list';
 import { ClientListComponent } from './components/client-list/client-list';
 import { ProfileComponent } from './components/profile/profile'; // Import this [1.2.1]
+import { ContractDetailComponent } from './components/contract-detail/contract-detail'; // Import this
+
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -35,6 +37,7 @@ export const routes: Routes = [
   // Contract pathways
   { path: 'contracts', component: ContractListComponent },
   { path: 'contracts/add', component: ContractAddComponent },
+  { path: 'contracts/:id', component: ContractDetailComponent },
 
   // Profile pathways [1.2.1]
   { path: 'profile', component: ProfileComponent } // Register the profile path

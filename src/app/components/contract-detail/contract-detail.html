@@ -1,0 +1,155 @@
+<div class="container py-5" *ngIf="contract">
+  <!-- Back Navigation Link -->
+  <div class="mb-4 no-print">
+    <a [routerLink]="['/contracts']" class="text-decoration-none text-secondary d-inline-flex align-items-center gap-2">
+      <i class="bi bi-arrow-left"></i> Back to Contracts Directory
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      
+      <!-- PRINT HEADER: Hidden on screen, visible only on PDF/print export [1.2.1] -->
+      <div class="print-header mb-5 pb-3 border-bottom d-none">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h3 class="fw-bold text-dark mb-0">CTI NETWORK</h3>
+            <small class="text-muted text-uppercase fw-bold">FICHE DE SUIVI DES CONTRATS DE MAINTENANCE</small>
+          </div>
+          <div class="text-end">
+            <h6 class="mb-0 fw-bold">Contrat ID: #{{ contract.id }}</h6>
+            <small class="text-muted">Exporté le: {{ todayDate | date:'yyyy-MM-dd' }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- READ ONLY VIEW -->
+      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="!isEditing">
+        <div class="d-flex justify-content-between align-items-start mb-4 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary text-white p-2 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+              <i class="bi bi-file-earmark-text fs-4"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold mb-0 text-dark">{{ contract.name }}</h4>
+              <p class="text-muted mb-0 small">Contract Details Card</p>
+            </div>
+          </div>
+          
+          <div class="no-print">
+            <span class="badge" [ngClass]="contract.status === 'ACTIVE' ? 'bg-success text-white' : 'bg-danger text-white'">
+              {{ contract.status === 'ACTIVE' ? 'Actif' : 'Suspendu' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered border-light-subtle">
+            <tr>
+              <th class="w-40 text-muted small fw-semibold">ID Client</th>
+              <td class="small fw-bold text-dark">{{ contract.client?.clientCode }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold">Entreprise (Client)</th>
+              <td>
+                <a [routerLink]="['/clients', contract.client ? contract.client.phones?.[0]?.phoneNumber : '00000000']" class="text-decoration-none fw-bold no-print">
+                  {{ contract.client?.name }}
+                </a>
+                <span class="print-only d-none">{{ contract.client?.name }}</span>
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold">Date de signature</th>
+              <td class="small text-dark">{{ contract.dateSignature }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold">Redevance</th>
+              <td class="small text-dark">{{ contract.redevance }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold">Nombre de visites (N.D.V)</th>
+              <td class="small fw-bold text-dark">{{ contract.numberOfVisits }} visites par an</td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold text-primary">Prochaine visite</th>
+              <td class="small fw-bold text-primary"><i class="bi bi-calendar-check-fill me-1"></i> {{ getNextVisit() }}</td>
+            </tr>
+            <tr>
+              <th class="text-muted small fw-semibold">Les mois des visites</th>
+              <td class="small text-muted">{{ contract.monthsOfVisits || 'Aucun mois configuré' }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- ACTION BUTTONS: Hidden on PDF exports [1.2.1] -->
+        <div class="d-flex flex-wrap gap-2 mt-2 no-print">
+          <button (click)="toggleEdit()" class="btn btn-warning flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2">
+            <i class="bi bi-pencil-square"></i> Modifier
+          </button>
+          
+          <button (click)="toggleStatus()" class="btn flex-grow-1 py-2" [ngClass]="contract.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'">
+            <i class="bi" [ngClass]="contract.status === 'ACTIVE' ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+            {{ contract.status === 'ACTIVE' ? 'Suspendre' : 'Activer' }}
+          </button>
+          
+          <button (click)="renewContract()" class="btn btn-outline-success flex-grow-1 py-2">
+            <i class="bi bi-arrow-repeat"></i> Renouveler Contrat
+          </button>
+          
+          <button (click)="exportToPdf()" class="btn btn-outline-dark flex-grow-1 py-2">
+            <i class="bi bi-file-pdf"></i> Exporter PDF
+          </button>
+          
+          <button (click)="deleteContract()" class="btn btn-danger px-4 py-2">
+            <i class="bi bi-trash"></i> Supprimer
+          </button>
+        </div>
+      </div>
+
+      <!-- EDIT VIEW -->
+      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="isEditing">
+        <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+          <div class="bg-warning text-dark p-2 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="bi bi-pencil-square fs-4"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0">Modifier le contrat</h4>
+            <p class="text-muted mb-0 small">Update parameters</p>
+          </div>
+        </div>
+
+        <form [formGroup]="editForm" (ngSubmit)="saveChanges()">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">Contract Name</label>
+            <input type="text" formControlName="name" class="form-control bg-light">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">Redevance</label>
+            <select formControlName="redevance" class="form-select bg-light">
+              <option value="ANNUELLE">ANNUELLE</option>
+              <option value="SEMESTRIELLE">SEMESTRIELLE</option>
+              <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">Signature Date</label>
+            <input type="date" formControlName="dateSignature" class="form-control bg-light">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-medium">Months of Visits</label>
+            <input type="text" formControlName="monthsOfVisits" class="form-control bg-light">
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning flex-grow-1 py-2">Save Changes</button>
+            <button type="button" (click)="toggleEdit()" class="btn btn-light border py-2 px-4">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>

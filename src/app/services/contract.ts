@@ -12,6 +12,7 @@ export interface Contract {
   monthsOfVisits?: string;
   clientId: number;
   client?: Client; // ADDED: Declares the nested client object
+  status: string; // Added field: ACTIVE, SUSPENDED
 }
 
 @Injectable({
@@ -45,5 +46,22 @@ export class ContractService {
   // PUT update contract months of visits
   updateContractSchedule(id: number, months: string): Observable<Contract> {
     return this.http.put<Contract>(`${this.apiUrl}/${id}/schedule`, null, { params: { months } });
+  }
+
+  // Add these methods inside the ContractService class:
+  getContractById(id: number): Observable<Contract> {
+    return this.http.get<Contract>(`${this.apiUrl}/${id}`);
+  }
+
+  updateContract(id: number, contract: Contract): Observable<Contract> {
+    return this.http.put<Contract>(`${this.apiUrl}/${id}`, contract);
+  }
+
+  toggleStatus(id: number, status: string): Observable<Contract> {
+    return this.http.put<Contract>(`${this.apiUrl}/${id}/status`, null, { params: { status } });
+  }
+
+  renewContract(id: number): Observable<Contract> {
+    return this.http.post<Contract>(`${this.apiUrl}/${id}/renew`, null);
   }
 }

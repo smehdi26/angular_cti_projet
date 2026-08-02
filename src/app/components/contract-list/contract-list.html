@@ -75,7 +75,12 @@
                     'bg-success-subtle text-success-emphasis': contract.redevance === 'ANNUELLE'
                   }">{{ contract.redevance }}</span>
                 </td>
-                <td class="fw-semibold text-dark">{{ contract.name }}</td>
+<!-- Link the contract name to its details page -->
+                <td class="fw-semibold">
+                  <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark">
+                        {{ contract.name }}
+                  </a>
+                </td>
                 <td>{{ contract.dateSignature }}</td>
                 <td class="text-center fw-bold">{{ contract.numberOfVisits }}</td>
                 <td class="text-muted small">{{ contract.monthsOfVisits || 'Not scheduled' }}</td>

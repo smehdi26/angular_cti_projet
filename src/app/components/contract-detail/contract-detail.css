@@ -1,0 +1,33 @@
+/* Print Media Styles (Active only during window.print PDF exports) [1.2.1] */
+@media print {
+    body {
+        background-color: #ffffff !important;
+        font-size: 12pt;
+    }
+    .main-content {
+        margin-left: 0 !important; /* Hide sidebar indentation */
+        padding: 0 !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    .no-print {
+        display: none !important; /* Hide sidebars, buttons, and navigation [1.2.1] */
+    }
+    .print-only {
+        display: block !important;
+    }
+    .print-header {
+        display: block !important; /* Show structured header */
+    }
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+    table th, table td {
+        border: 1px solid #dee2e6 !important;
+        padding: 12px !important;
+    }
+}
