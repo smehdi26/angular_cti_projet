@@ -1,0 +1,136 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Clients Directory</h3>
+      <p class="text-muted mb-0">Manage customer files, contact parameters, and organizational metadata</p>
+    </div>
+    <a [routerLink]="['/clients/add']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2">
+      <i class="bi bi-plus-lg"></i> Register New Client
+    </a>
+  </div>
+
+  <!-- Notion-style Filters and Search Bar -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body bg-white rounded p-3">
+      <div class="row g-2 align-items-center">
+        <!-- Search Keyword -->
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()" 
+                   class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, email, code, website...">
+          </div>
+        </div>
+        <!-- Sector Filter -->
+        <div class="col-md-3">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-tag"></i></span>
+            <select [(ngModel)]="sectorFilter" (change)="applyFilters()" class="form-select bg-light border-start-0 ps-0">
+              <option value="">Sector: All</option>
+              @for (sector of sectors; track sector.id) {
+                <option [value]="sector.id">{{ sector.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <!-- City Filter -->
+        <div class="col-md-2">
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-geo-alt"></i></span>
+            <select [(ngModel)]="cityFilter" (change)="applyFilters()" class="form-select bg-light border-start-0 ps-0">
+              <option value="">City: All</option>
+              @for (city of citiesList; track city) {
+                <option [value]="city">{{ city }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <!-- Reset -->
+        <div class="col-md-2">
+          <button (click)="resetFilters()" class="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2" title="Reset Filters">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Directory Registry Table -->
+  <div class="card shadow-sm border-0 mb-5">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th #colCode class="sortable" data-sort-dir="asc" (click)="sort(colCode)">Code <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colName class="sortable" data-sort-dir="asc" (click)="sort(colName)">Client Name <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colEmail class="sortable" data-sort-dir="asc" (click)="sort(colEmail)">Email Address <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colSector class="sortable" data-sort-dir="asc" (click)="sort(colSector)">Sector <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colCity class="sortable" data-sort-dir="asc" (click)="sort(colCity)">Location <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th>Active Contact Numbers</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (client of filteredClients; track client.id) {
+              <tr>
+                <td>
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded-circle text-center d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 600; color: #4f46e5;">
+                      <span>{{ client.name.substring(0, 1).toUpperCase() }}</span>
+                    </div>
+                    <span class="fw-medium text-dark">{{ client.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <a href="mailto:{{ client.email }}" class="text-decoration-none text-muted">{{ client.email }}</a>
+                </td>
+                <td>
+                  <span *ngIf="client.sector" class="badge bg-light text-secondary border">{{ client.sector.name }}</span>
+                  <span *ngIf="!client.sector" class="text-muted small">-</span>
+                </td>
+                <td class="text-muted small">
+                  {{ client.city || '-' }}
+                </td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1">
+                    @for (phone of client.phones; track phone.phoneNumber) {
+                      <span class="badge bg-light text-secondary border d-flex align-items-center gap-1">
+                        <i class="bi bi-telephone text-primary" style="font-size: 11px;"></i>
+                        <span>{{ phone.phoneNumber }}</span>
+                      </span>
+                    }
+                  </div>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group">
+                    <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-outline-info btn-sm px-3" title="View Profile">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a [routerLink]="['/clients', getPrimaryPhone(client), 'edit']" class="btn btn-outline-warning btn-sm px-3" title="Edit Profile">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button (click)="deleteClient(client)" class="btn btn-outline-danger btn-sm px-3" title="Delete Profile">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                  <i class="bi bi-folder-x fs-1 d-block mb-3 text-muted"></i>
+                  No client records matched the search filters.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -18,19 +18,21 @@
           
           <h6 class="fw-bold text-muted small text-uppercase mb-3">Required Credentials</h6>
 
+          <!-- Client Name -->
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Client Name</label>
             <input type="text" formControlName="name" class="form-control bg-light"
                    [class.is-invalid]="clientForm.get('name')?.touched && clientForm.get('name')?.invalid">
           </div>
 
+          <!-- Email -->
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Email Address</label>
             <input type="email" formControlName="email" class="form-control bg-light"
                    [class.is-invalid]="clientForm.get('email')?.touched && clientForm.get('email')?.invalid">
           </div>
 
-          <!-- OPTIONAL FIELDS -->
+          <!-- Optional Info -->
           <h6 class="fw-bold text-muted small text-uppercase mb-3 mt-4 pt-2 border-top">Optional Information (Optional)</h6>
           
           <div class="row g-3 mb-3">
@@ -54,9 +56,15 @@
               <label class="form-label text-muted small fw-medium">Physical Address</label>
               <input type="text" formControlName="address" class="form-control bg-light">
             </div>
+            <!-- City Dropdown Selector -->
             <div class="col-md-6">
-              <label class="form-label text-muted small fw-medium">City</label>
-              <input type="text" formControlName="city" class="form-control bg-light">
+              <label class="form-label text-muted small fw-medium">City (Governorate)</label>
+              <select formControlName="city" class="form-select bg-light">
+                <option value="">-- Select Governorate --</option>
+                @for (city of citiesList; track city) {
+                  <option [value]="city">{{ city }}</option>
+                }
+              </select>
             </div>
           </div>
 
@@ -70,6 +78,7 @@
             <textarea formControlName="description" class="form-control bg-light" rows="3"></textarea>
           </div>
 
+          <!-- Dynamic Phone List -->
           <div class="mb-4 p-3 bg-light rounded-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <label class="form-label mb-0 text-muted fw-bold small"><i class="bi bi-phone-fill me-1 text-primary"></i> Contact Lines</label>

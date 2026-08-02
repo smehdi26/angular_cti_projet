@@ -9,6 +9,8 @@ export interface NotificationLog {
   createdAt: string;
   readStatus: boolean;
   type: string; // INFO, SUCCESS, DANGER, WARNING
+  category: string; // Added: CLIENT, CONTRACT, RESERVATION
+
 }
 
 @Injectable({

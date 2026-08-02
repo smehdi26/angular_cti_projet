@@ -18,6 +18,8 @@ export class NotificationListComponent implements OnInit {
   // Search & Filter Properties
   searchTerm: string = '';
   activeFilter: string = 'ALL'; // ALL | SUCCESS | WARNING | INFO
+  activeCategory: string = 'ALL'; // ALL | CLIENT | CONTRACT | RESERVATION [1.2.6]
+  
 
   constructor(private notificationService: NotificationService) { }
 
@@ -47,14 +49,19 @@ export class NotificationListComponent implements OnInit {
   // Instant in-memory filters matching severity levels and text inputs [1.2.6]
   applySearchAndFilter(): void {
     const term = this.searchTerm.toLowerCase().trim();
-    
-    // 1. Filter by Severity Category
     let temp = this.notifications;
+
+    // 1. Filter by Severity Level
     if (this.activeFilter !== 'ALL') {
       temp = this.notifications.filter(n => n.type === this.activeFilter || (this.activeFilter === 'WARNING' && n.type === 'DANGER'));
     }
 
-    // 2. Filter by search keyword matching
+    // 2. Filter by Domain Category [1.2.6]
+    if (this.activeCategory !== 'ALL') {
+      temp = this.notifications.filter(n => n.category === this.activeCategory);
+    }
+
+    // 3. Filter by Search Keyword
     if (term) {
       temp = temp.filter(n => n.message.toLowerCase().includes(term));
     }
@@ -64,6 +71,12 @@ export class NotificationListComponent implements OnInit {
 
   changeFilter(filterType: string): void {
     this.activeFilter = filterType;
+    this.applySearchAndFilter();
+  }
+
+  // Switch Category Tab [1.2.6]
+  changeCategory(categoryType: string): void {
+    this.activeCategory = categoryType;
     this.applySearchAndFilter();
   }
 

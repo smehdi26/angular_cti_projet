@@ -1,13 +1,8 @@
 <div class="container-fluid py-4">
   <!-- Greeting -->
-  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
-    <div>
-      <h3 class="fw-bold text-dark mb-1">Directory Workspace</h3>
-      <p class="text-muted mb-0">Overview of existing operations and client profiles</p>
-    </div>
-    <a [routerLink]="['/clients/add']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2">
-      <i class="bi bi-plus-lg"></i> Register New Client
-    </a>
+  <div class="mb-4 pb-2">
+    <h3 class="fw-bold text-dark mb-1">Workspace Overview</h3>
+    <p class="text-muted mb-0">High-level insights, active meetings timeline, and recent directory logs</p>
   </div>
 
   <!-- KPI Metrics -->
@@ -17,7 +12,7 @@
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Client Profiles</span>
-            <h2 class="fw-bold text-dark mt-2 mb-0">{{ clients.length }}</h2>
+            <h2 class="fw-bold text-dark mt-2 mb-0">{{ totalClientsCount }}</h2>
           </div>
           <div class="bg-primary-subtle p-3 rounded text-primary">
             <i class="bi bi-people-fill fs-3"></i>
@@ -29,7 +24,7 @@
       <div class="card p-4 bg-white shadow-sm border-0">
         <div class="d-flex align-items-center justify-content-between">
           <div>
-            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Active Numbers</span>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Active Lines</span>
             <h2 class="fw-bold text-dark mt-2 mb-0">{{ totalPhones }}</h2>
           </div>
           <div class="bg-success-subtle p-3 rounded text-success">
@@ -42,112 +37,122 @@
       <div class="card p-4 bg-white shadow-sm border-0">
         <div class="d-flex align-items-center justify-content-between">
           <div>
-            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Server Status</span>
-            <h2 class="fw-bold text-success mt-2 mb-0" style="font-size: 24px;">Connected</h2>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Today's Meetings</span>
+            <h2 class="fw-bold text-dark mt-2 mb-0">{{ todayReservationsCount }}</h2>
           </div>
-          <div class="bg-info-subtle p-3 rounded text-info">
-            <i class="bi bi-database-check fs-3"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search Panel -->
-  <div class="card mb-4 shadow-sm border-0">
-    <div class="card-body p-4 bg-white rounded">
-      <div class="row g-3 align-items-center">
-        <div class="col-md-12">
-          <div class="input-group">
-            <span class="input-group-text bg-light text-muted border-end-0">
-              <i class="bi bi-search"></i>
-            </span>
-            <!-- Live Local Filter Binding -->
-            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" 
-                   class="form-control bg-light border-start-0 ps-0" 
-                   placeholder="Search directory instantly by name, email, phone number, or key description attributes...">
+          <div class="bg-warning-subtle p-3 rounded text-warning">
+            <i class="bi bi-calendar3 fs-3"></i>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Registry Table -->
-  <div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-      <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-list-task text-primary me-2"></i> Client Registry Data</h5>
+  <!-- Dual Grid Workspace -->
+  <div class="row g-4 mb-4">
+    <!-- Left Panel: Today's Meetings Timeline -->
+    <div class="col-lg-6">
+      <div class="card p-4 h-100 border-0 shadow-sm bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-check text-primary me-2"></i> Today's Schedule</h5>
+          <a [routerLink]="['/reservations']" class="text-decoration-none small">Schedule Workspace <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          @for (meeting of todayMeetings; track meeting.time) {
+            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
+              <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary text-white" style="font-size: 14px;">{{ meeting.time }}</span>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">{{ meeting.clientName }}</h6>
+                  <small class="text-muted" *ngIf="meeting.description">Notes: {{ meeting.description }}</small>
+                </div>
+              </div>
+              <span class="badge bg-success-subtle text-success">Reserved</span>
+            </div>
+          } @empty {
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
+              No meetings scheduled for today.
+            </div>
+          }
+        </div>
+      </div>
     </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead>
-            <tr>
-              <th style="width: 110px;">Client Code</th> <!-- Added Column Header -->
-              <th>Client Name</th>
-              <th>Email Address</th>
-              <th>Description</th>
-              <th>Active Contact Numbers</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Modern Angular 17 Control Flow -->
-            @for (client of filteredClients; track client.id) {
-              <tr>
-                <td>
-                  <!-- Displays the auto-generated client code -->
-                  <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="bg-light p-2 rounded-circle text-center d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-weight: 600; color: #4f46e5;">
-                      <span>{{ client.name.substring(0, 1).toUpperCase() }}</span>
-                    </div>
-                    <span class="fw-medium text-dark">{{ client.name }}</span>
-                  </div>
-                </td>
-                <td>
-                  <a href="mailto:{{ client.email }}" class="text-decoration-none text-muted">{{ client.email }}</a>
-                </td>
-                <td class="text-muted small">{{ client.description || '-' }}</td>
-                <td>
-                  <div class="d-flex flex-wrap gap-1">
-                    @for (phone of client.phones; track phone.phoneNumber) {
-                      <span class="badge bg-light text-secondary border d-flex align-items-center gap-1">
-                        <i class="bi bi-telephone text-primary"></i>
-                        <span>{{ phone.phoneNumber }}</span>
-                      </span>
-                    }
-                  </div>
-                </td>
-                <td class="text-end">
-                  <div class="btn-group">
-                    <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-outline-info btn-sm px-3" title="View Profile">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <a [routerLink]="['/clients', getPrimaryPhone(client), 'edit']" class="btn btn-outline-warning btn-sm px-3" title="Edit Profile">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    <button (click)="deleteClient(client)" class="btn btn-outline-danger btn-sm px-3" title="Delete Profile">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="text-center text-muted py-5">
-                  <i class="bi bi-folder-x fs-1 d-block mb-3 text-muted"></i>
-                  No matching database records found for this directory.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+
+    <!-- Right Panel: Recent System Logs -->
+    <div class="col-lg-6">
+      <div class="card p-4 h-100 border-0 shadow-sm bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i> Recent Activities</h5>
+          <a [routerLink]="['/notifications']" class="text-decoration-none small">Notifications Log <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+          @for (notif of recentActivities; track notif.id) {
+            <div class="d-flex align-items-start gap-3">
+              <div class="p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 38px;"
+                   [ngClass]="{
+                     'bg-success-subtle text-success': notif.type === 'SUCCESS',
+                     'bg-danger-subtle text-danger': notif.type === 'DANGER',
+                     'bg-warning-subtle text-warning': notif.type === 'WARNING',
+                     'bg-primary-subtle text-primary': notif.type === 'INFO'
+                   }">
+                <i class="bi fs-6" [ngClass]="{
+                  'bi-check-circle-fill': notif.type === 'SUCCESS',
+                  'bi-x-circle-fill': notif.type === 'DANGER',
+                  'bi-exclamation-triangle-fill': notif.type === 'WARNING',
+                  'bi-info-circle-fill': notif.type === 'INFO'
+                }"></i>
+              </div>
+              <div>
+                <p class="mb-0 text-dark small" style="font-weight: 500;">{{ notif.message }}</p>
+                <small class="text-muted" style="font-size: 11px;">{{ notif.createdAt.substring(11, 16) }}</small>
+              </div>
+            </div>
+          } @empty {
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-bell-slash fs-2 mb-2 d-block text-muted"></i>
+              No administrative activities logged.
+            </div>
+          }
+        </div>
       </div>
     </div>
   </div>
-  <!-- Daily Agenda Summary Modal -->
+
+  <!-- Bottom Panel: Newest Registered Clients -->
+  <div class="card p-4 border-0 shadow-sm bg-white mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+      <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-person-check text-primary me-2"></i> Newest Client Registrations</h5>
+      <a [routerLink]="['/clients']" class="text-decoration-none small">Clients Directory <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <div class="row g-3">
+      @for (client of recentClients; track client.id) {
+        <div class="col-md-4">
+          <div class="card p-3 border shadow-sm h-100 bg-white d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
+                <span *ngIf="client.sector" class="badge bg-light text-secondary border" style="font-size: 10px;">{{ client.sector.name }}</span>
+              </div>
+              <h6 class="fw-bold text-dark mb-1">{{ client.name }}</h6>
+              <span class="text-muted small d-block mb-3">{{ client.email }}</span>
+            </div>
+            <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-sm btn-outline-primary w-100 rounded-2">View Profile</a>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-12 text-center text-muted py-4">
+          <i class="bi bi-person-x fs-2 mb-2 d-block"></i>No client files created yet.
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Daily Agenda Summary Modal -->
 @if (todayReservationsCount > 0) {
   <div class="modal fade" id="dailySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -158,14 +163,13 @@
         </div>
         <div class="modal-body text-center p-4">
           <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-            <i class="bi bi-bell-fill fs-3 animate-bell"></i>
+            <i class="bi bi-bell-fill fs-3"></i>
           </div>
           <h5 class="fw-bold mb-2">Good Day Admin,</h5>
           <p class="text-muted fs-5 mb-0">You have <strong class="text-primary">{{ todayReservationsCount }}</strong> active reservations scheduled for today.</p>
         </div>
         <div class="modal-footer border-0 pb-4 justify-content-center">
-          <!-- Triggers storage save on acknowledge click -->
-          <button type="button" (click)="acknowledgeDailySummary()" class="btn btn-primary px-4 rounded-3" data-bs-dismiss="modal">Acknowledge</button>
+          <button type="button" id="acknowledge-btn" (click)="acknowledgeDailySummary()" class="btn btn-primary px-4 rounded-3" data-bs-dismiss="modal">Acknowledge</button>
         </div>
       </div>
     </div>
@@ -183,8 +187,8 @@
       </div>
       <div class="toast-body bg-white rounded-bottom-3 p-3">
         <p class="mb-3">
-          Please contact <strong>{{ alert.client?.name }}</strong> 
-          ({{ alert.client?.phones?.[0]?.phoneNumber || 'No Number' }}) 
+          Please contact <strong>{{ alert.client.name }}</strong> 
+          ({{ alert.client.phones && alert.client.phones.length > 0 ? alert.client.phones[0].phoneNumber : 'No Number' }}) 
           for their upcoming appointment at <strong>{{ alert.reservationTime.substring(11, 16) }}</strong>.
         </p>
         <div class="d-flex justify-content-end align-items-center">
@@ -198,5 +202,4 @@
       </div>
     </div>
   }
-</div>
 </div>

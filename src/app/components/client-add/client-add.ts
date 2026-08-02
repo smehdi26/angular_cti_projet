@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ClientService } from '../../services/client';
-import { SectorService } from '../../services/sector'; // Import SectorService
+import { SectorService } from '../../services/sector';
 import { Sector } from '../../services/client';
 
 @Component({
@@ -16,13 +16,21 @@ import { Sector } from '../../services/client';
 export class ClientAddComponent implements OnInit {
 
   clientForm!: FormGroup;
-  sectors: Sector[] = []; // Sectors dropdown array
+  sectors: Sector[] = [];
   errorMessage: string = '';
+
+  // 24 Tunisian Governorates list [1.1.4]
+  citiesList: string[] = [
+    'Ariana', 'Béja', 'Ben Arous', 'Bizerte', 'Gabès', 'Gafsa',
+    'Jendouba', 'Kairouan', 'Kasserine', 'Kébili', 'Le Kef', 'Mahdia',
+    'La Manouba', 'Médenine', 'Monastir', 'Nabeul', 'Sfax', 'Sidi Bouzid',
+    'Siliana', 'Sousse', 'Tataouine', 'Tozeur', 'Tunis', 'Zaghouan'
+  ];
 
   constructor(
     private fb: FormBuilder,
     private clientService: ClientService,
-    private sectorService: SectorService, // Inject SectorService
+    private sectorService: SectorService,
     private router: Router
   ) { }
 
@@ -31,9 +39,8 @@ export class ClientAddComponent implements OnInit {
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       description: [''],
-      // Optional fields initialization [1.2.6]
       address: [''],
-      city: [''],
+      city: [''], // Will bind to the dropdown select
       contact: [''],
       website: [''],
       sectorId: [''],
@@ -85,11 +92,11 @@ export class ClientAddComponent implements OnInit {
       name: formValue.name,
       email: formValue.email,
       description: formValue.description,
-      address: formValue.address || undefined, // Changed from null
-      city: formValue.city || undefined,       // Changed from null
-      contact: formValue.contact || undefined,   // Changed from null
-      website: formValue.website || undefined,   // Changed from null
-      sectorId: formValue.sectorId ? Number(formValue.sectorId) : undefined, // Changed from null
+      address: formValue.address || undefined,
+      city: formValue.city || undefined, // Binds empty selection safely [1.2.1]
+      contact: formValue.contact || undefined,
+      website: formValue.website || undefined,
+      sectorId: formValue.sectorId ? Number(formValue.sectorId) : undefined,
       phones: formValue.phones.map((p: any) => p.phoneNumber)
     };
 

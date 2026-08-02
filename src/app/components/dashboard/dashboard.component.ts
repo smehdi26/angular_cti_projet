@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ClientService, Client, Phone } from '../../services/client';
-import { ReservationService, Reservation } from '../../services/reservation'; // Added import
-import { NotificationService } from '../../services/notification'; // Added import
+import { ClientService, Client } from '../../services/client';
+import { ReservationService, Reservation } from '../../services/reservation';
+import { NotificationService, NotificationLog } from '../../services/notification';
 
 declare var bootstrap: any;
 
@@ -17,36 +17,41 @@ declare var bootstrap: any;
 })
 export class DashboardComponent implements OnInit {
 
-  clients: Client[] = [];
-  filteredClients: Client[] = [];
-  searchTerm: string = '';
+  totalClientsCount: number = 0;
   totalPhones: number = 0;
-
-  // Notification properties
   todayReservationsCount: number = 0;
+
+  // Highlights Previews
+  todayMeetings: any[] = [];
+  recentActivities: NotificationLog[] = [];
+  recentClients: Client[] = [];
   upcomingAlerts: Reservation[] = [];
 
   constructor(
     private clientService: ClientService,
-    private reservationService: ReservationService, // Inject ReservationService
-    private notificationService: NotificationService // Inject NotificationService
+    private reservationService: ReservationService,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
-    this.loadClients();
+    this.loadClientsData();
     this.loadNotificationMetrics();
+    this.loadSchedulerHighlights();
   }
 
-  loadClients(): void {
+  loadClientsData(): void {
     this.clientService.getClients().subscribe({
       next: (data: Client[]) => {
-        this.clients = data;
-        this.filteredClients = data;
-        this.calculateTotalPhones();
+        this.totalClientsCount = data.length;
+        
+        // Retrieve the last 3 registered clients
+        this.recentClients = data.slice(-3).reverse();
+
+        this.totalPhones = data.reduce((acc, client) => {
+          return acc + (client.phones ? client.phones.length : 0);
+        }, 0);
       },
-      error: (err: any) => {
-        console.error('Failed to load clients', err);
-      }
+      error: (err: any) => console.error(err)
     });
   }
 
@@ -57,27 +62,44 @@ export class DashboardComponent implements OnInit {
         this.todayReservationsCount = count;
         this.triggerDailySummaryModal();
       },
-      error: (err: any) => console.error('Failed to load daily count', err)
+      error: (err: any) => console.error(err)
     });
 
     // 2. Get active bookings starting within 1 hour
     this.reservationService.getUpcomingAlerts().subscribe({
       next: (alerts: Reservation[]) => {
-        // Filter out already acknowledged warning cards locally from browser memory [1.2.1]
         this.upcomingAlerts = alerts.filter(alert => 
           localStorage.getItem('acknowledged_alert_' + alert.id) !== 'true'
         );
       },
-      error: (err: any) => console.error('Failed to load upcoming alerts', err)
+      error: (err: any) => console.error(err)
+    });
+
+    // 3. Load latest 5 system activity logs
+    this.notificationService.getNotifications().subscribe({
+      next: (data: NotificationLog[]) => {
+        this.recentActivities = data.slice(0, 5); // Take the top 5
+      },
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  loadSchedulerHighlights(): void {
+    const todayStr = new Date().toISOString().split('T')[0];
+    this.reservationService.getSlots(todayStr).subscribe({
+      next: (slots) => {
+        // Filter out occupied intervals to show today's timeline activity
+        this.todayMeetings = slots.filter(s => s.booked);
+      },
+      error: (err: any) => console.error(err)
     });
   }
 
   triggerDailySummaryModal(): void {
     const todayCount = this.todayReservationsCount;
-    const todayDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const todayDate = new Date().toISOString().split('T')[0];
     const acknowledged = JSON.parse(localStorage.getItem('lastAcknowledgedDailySummary') || 'null');
 
-    // Display modal if count > 0, AND (date has changed OR reservation count has changed)
     if (todayCount > 0 && (!acknowledged || acknowledged.date !== todayDate || acknowledged.count !== todayCount)) {
       setTimeout(() => {
         const modalEl = document.getElementById('dailySummaryModal');
@@ -99,28 +121,7 @@ export class DashboardComponent implements OnInit {
 
   acknowledgeAlert(alertId: number): void {
     localStorage.setItem('acknowledged_alert_' + alertId, 'true');
-    // Filter list locally to hide card instantly
     this.upcomingAlerts = this.upcomingAlerts.filter(alert => alert.id !== alertId);
-  }
-
-  onSearch(): void {
-    const term = this.searchTerm.toLowerCase().trim();
-    if (!term) {
-      this.filteredClients = this.clients;
-    } else {
-      this.filteredClients = this.clients.filter((client: Client) => 
-        client.name.toLowerCase().includes(term) ||
-        client.email.toLowerCase().includes(term) ||
-        (client.description && client.description.toLowerCase().includes(term)) ||
-        (client.phones && client.phones.some((p: Phone) => p.phoneNumber.includes(term)))
-      );
-    }
-  }
-
-  calculateTotalPhones(): void {
-    this.totalPhones = this.clients.reduce((acc: number, client: Client) => {
-      return acc + (client.phones ? client.phones.length : 0);
-    }, 0);
   }
 
   getPrimaryPhone(client: Client): string {
@@ -128,21 +129,5 @@ export class DashboardComponent implements OnInit {
       return client.phones[0].phoneNumber;
     }
     return '00000000';
-  }
-
-  deleteClient(client: Client): void {
-    const phone = this.getPrimaryPhone(client);
-    if (phone === '00000000') return;
-
-    if (confirm(`Are you sure you want to permanently delete client ${client.name}?`)) {
-      this.clientService.deleteClient(phone).subscribe({
-        next: () => {
-          this.loadClients();
-        },
-        error: (err: any) => {
-          console.error('Failed to delete client', err);
-        }
-      });
-    }
   }
 }

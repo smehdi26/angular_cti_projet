@@ -11,24 +11,38 @@
     </button>
   </div>
 
-  <!-- Notion-style Filters and Search Bar -->
+  <!-- Notion-style Dual Filters and Search Bar -->
   <div class="card mb-4 shadow-sm border-0">
-    <div class="card-body p-3 bg-white rounded">
-      <div class="row g-3 align-items-center">
-        <!-- Search Input -->
-        <div class="col-md-7">
+    <div class="card-body p-4 bg-white rounded">
+      <!-- Search Input row -->
+      <div class="row g-3 align-items-center mb-3">
+        <div class="col-md-12">
           <div class="input-group">
             <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
             <input type="text" [(ngModel)]="searchTerm" (input)="applySearchAndFilter()" 
                    class="form-control bg-light border-start-0 ps-0" placeholder="Filter logs by keyword, client name, or date...">
           </div>
         </div>
-        <!-- Filter Tabs -->
-        <div class="col-md-5 d-flex gap-1 justify-content-md-end">
-          <button (click)="changeFilter('ALL')" [class.btn-dark]="activeFilter === 'ALL'" [class.btn-light]="activeFilter !== 'ALL'" class="btn btn-sm border px-3 py-2 rounded-3">All</button>
-          <button (click)="changeFilter('SUCCESS')" [class.btn-success]="activeFilter === 'SUCCESS'" [class.btn-light]="activeFilter !== 'SUCCESS'" class="btn btn-sm border px-3 py-2 rounded-3">Success</button>
-          <button (click)="changeFilter('WARNING')" [class.btn-warning]="activeFilter === 'WARNING'" [class.btn-light]="activeFilter !== 'WARNING'" class="btn btn-sm border px-3 py-2 rounded-3">Warnings</button>
-          <button (click)="changeFilter('INFO')" [class.btn-primary]="activeFilter === 'INFO'" [class.btn-light]="activeFilter !== 'INFO'" class="btn btn-sm border px-3 py-2 rounded-3">Info</button>
+      </div>
+      
+      <!-- Row 2: Dual filter pills -->
+      <div class="row g-3">
+        <!-- Severity Filters -->
+        <div class="col-md-6 d-flex gap-1 align-items-center">
+          <span class="text-muted small fw-bold me-2 text-uppercase" style="font-size: 10px;">Severity:</span>
+          <button (click)="changeFilter('ALL')" [class.btn-dark]="activeFilter === 'ALL'" [class.btn-light]="activeFilter !== 'ALL'" class="btn btn-xs border px-3 py-1 rounded-3">All</button>
+          <button (click)="changeFilter('SUCCESS')" [class.btn-success]="activeFilter === 'SUCCESS'" [class.btn-light]="activeFilter !== 'SUCCESS'" class="btn btn-xs border px-3 py-1 rounded-3">Success</button>
+          <button (click)="changeFilter('WARNING')" [class.btn-warning]="activeFilter === 'WARNING'" [class.btn-light]="activeFilter !== 'WARNING'" class="btn btn-xs border px-3 py-1 rounded-3">Warnings</button>
+          <button (click)="changeFilter('INFO')" [class.btn-primary]="activeFilter === 'INFO'" [class.btn-light]="activeFilter !== 'INFO'" class="btn btn-xs border px-3 py-1 rounded-3">Info</button>
+        </div>
+        
+        <!-- Category Filters -->
+        <div class="col-md-6 d-flex gap-1 align-items-center justify-content-md-end">
+          <span class="text-muted small fw-bold me-2 text-uppercase" style="font-size: 10px;">Domain:</span>
+          <button (click)="changeCategory('ALL')" [class.btn-dark]="activeCategory === 'ALL'" [class.btn-light]="activeCategory !== 'ALL'" class="btn btn-xs border px-3 py-1 rounded-3">All</button>
+          <button (click)="changeCategory('CLIENT')" [class.btn-outline-dark]="activeCategory === 'CLIENT'" [class.btn-light]="activeCategory !== 'CLIENT'" class="btn btn-xs border px-3 py-1 rounded-3">Clients</button>
+          <button (click)="changeCategory('CONTRACT')" [class.btn-outline-dark]="activeCategory === 'CONTRACT'" [class.btn-light]="activeCategory !== 'CONTRACT'" class="btn btn-xs border px-3 py-1 rounded-3">Contracts</button>
+          <button (click)="changeCategory('RESERVATION')" [class.btn-outline-dark]="activeCategory === 'RESERVATION'" [class.btn-light]="activeCategory !== 'RESERVATION'" class="btn btn-xs border px-3 py-1 rounded-3">Reservations</button>
         </div>
       </div>
     </div>
