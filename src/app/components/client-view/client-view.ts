@@ -148,6 +148,39 @@ export class ClientViewComponent implements OnInit {
     }
     return '00000000';
   }
+
+  // Dynamically calculates the rolling month intervals based on the signature date and visits count [1.1.4, 1.2.6]
+  getAllowedMonthsForVisit(contract: Contract | null, visitIndex: number): string[] {
+    const defaultMonths = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+
+    if (!contract || !contract.dateSignature) {
+      return defaultMonths; // Fallback to all months if no date signature is loaded
+    }
+
+    // 1. Get the signature month index (0-based: 0 = Janvier, 6 = Juillet)
+    const signatureDate = new Date(contract.dateSignature);
+    const startMonthIndex = signatureDate.getMonth(); 
+
+    // 2. Get interval length (T) in months based on N.D.V count (e.g. 12 / 4 = 3 months)
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n; 
+
+    // 3. Calculate start and end offsets for this specific visit index [1.1.4]
+    const periodStartOffset = visitIndex * t;
+    const periodEndOffset = periodStartOffset + t;
+
+    // 4. Map the offsets back to their matching French calendar month strings
+    const allowedMonths: string[] = [];
+    for (let offset = periodStartOffset; offset < periodEndOffset; offset++) {
+      const actualMonthIndex = (startMonthIndex + offset) % 12;
+      allowedMonths.push(this.monthsList[actualMonthIndex]);
+    }
+
+    return allowedMonths;
+  }
   
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;

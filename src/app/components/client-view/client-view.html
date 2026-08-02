@@ -234,13 +234,15 @@
           <strong>{{ selectedContract.name }}</strong> [1.1.4].
         </p>
 
+        <!-- Dynamically generates exactly N dropdowns filtered by active interval boundaries -->
         <div class="d-flex flex-column gap-3">
           <div *ngFor="let monthVal of selectedMonths; let i = index; trackBy: trackByIndex" class="row align-items-center">
             <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Month</label>
             <div class="col-sm-8">
               <select [(ngModel)]="selectedMonths[i]" [name]="'visit-month-' + i" class="form-select bg-light">
                 <option value="">-- Select Month --</option> 
-                <option *ngFor="let m of monthsList" [value]="m">{{ m }}</option>
+                <!-- Displays ONLY the months belonging to this specific visit's period [1.1.4, 1.2.6] -->
+                <option *ngFor="let m of getAllowedMonthsForVisit(selectedContract, i)" [value]="m">{{ m }}</option>
               </select>
             </div>
           </div>
