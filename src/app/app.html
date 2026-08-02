@@ -32,11 +32,11 @@
       </a>
     </nav>
     
-    <!-- Footer Panel: User Profile Brief Card & Log Out -->
+    <!-- Footer Panel: User Profile Brief Card (Made clickable using routerLink) [1.2.1] -->
     <div class="p-3 border-top border-secondary-subtle" style="border-top-color: rgba(255,255,255,0.1) !important;" *ngIf="currentUser">
       
-      <!-- User Profile Card [1.2.1] -->
-      <div class="d-flex align-items-center gap-3 mb-3 px-2">
+      <!-- Clickable Profile Card -->
+      <a [routerLink]="['/profile']" class="d-flex align-items-center gap-3 mb-3 px-2 text-decoration-none" style="cursor: pointer;">
         <!-- Initials Avatar -->
         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold text-center" 
              style="width: 40px; height: 40px; font-size: 13px; min-width: 40px;">
@@ -51,7 +51,7 @@
             {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : 'User' }}
           </small>
         </div>
-      </div>
+      </a>
       
       <!-- Sign Out Action -->
       <button (click)="logout()" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2">

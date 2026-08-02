@@ -10,30 +10,32 @@ import { ReservationScheduleComponent } from './components/reservation-schedule/
 import { NotificationListComponent } from './components/notification-list/notification-list';
 import { ContractAddComponent } from './components/contract-add/contract-add';
 import { ContractListComponent } from './components/contract-list/contract-list';
-import { ClientListComponent } from './components/client-list/client-list'; // Import this [1.2.1]
+import { ClientListComponent } from './components/client-list/client-list';
+import { ProfileComponent } from './components/profile/profile'; // Import this [1.2.1]
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  
-  // Workspace directories [1.2.1]
   { path: 'dashboard', component: DashboardComponent },
-  { path: 'clients', component: ClientListComponent }, // Register clients directory path
+  { path: 'clients', component: ClientListComponent },
   
-  // Client CRUD [1.2.1]
+  // Client CRUD
   { path: 'clients/add', component: ClientAddComponent },
   { path: 'clients/:phone', component: ClientViewComponent },
   { path: 'clients/:phone/edit', component: ClientEditComponent },
 
-  // Reservation pathways [1.2.1]
+  // Reservation pathways
   { path: 'reservations', component: ReservationListComponent },
   { path: 'reservations/schedule', component: ReservationScheduleComponent },
 
-  // Notification pathways [1.2.1]
+  // Notification pathways
   { path: 'notifications', component: NotificationListComponent },
 
-  // Contract pathways [1.2.1]
+  // Contract pathways
   { path: 'contracts', component: ContractListComponent },
-  { path: 'contracts/add', component: ContractAddComponent }
+  { path: 'contracts/add', component: ContractAddComponent },
+
+  // Profile pathways [1.2.1]
+  { path: 'profile', component: ProfileComponent } // Register the profile path
 ];

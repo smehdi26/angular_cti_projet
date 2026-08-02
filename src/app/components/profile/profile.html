@@ -1,0 +1,80 @@
+<div class="container py-5" *ngIf="currentUser">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white">
+        
+        <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+          <!-- Avatar Icon -->
+          <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" style="width: 56px; height: 56px; font-size: 20px;">
+            <span>{{ currentUser.firstName.substring(0, 1).toUpperCase() }}{{ currentUser.lastName.substring(0, 1).toUpperCase() }}</span>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-0">Manage Profile</h4>
+            <p class="text-muted mb-0 small">Update your administrator details and secure password credentials</p>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div *ngIf="successMessage" class="alert alert-success mb-3"><i class="bi bi-check-circle-fill"></i> {{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}</div>
+
+        <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+          
+          <h6 class="fw-bold text-muted small text-uppercase mb-3">General Information</h6>
+
+          <!-- First Name -->
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">First Name</label>
+            <input type="text" formControlName="firstName" class="form-control bg-light"
+                   [class.is-invalid]="profileForm.get('firstName')?.touched && profileForm.get('firstName')?.invalid">
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('firstName')?.touched && profileForm.get('firstName')?.hasError('required')">First name is required.</div>
+          </div>
+
+          <!-- Last Name -->
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">Last Name</label>
+            <input type="text" formControlName="lastName" class="form-control bg-light"
+                   [class.is-invalid]="profileForm.get('lastName')?.touched && profileForm.get('lastName')?.invalid">
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('lastName')?.touched && profileForm.get('lastName')?.hasError('required')">Last name is required.</div>
+          </div>
+
+          <!-- Email Address -->
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-medium">Email Address</label>
+            <input type="email" formControlName="email" class="form-control bg-light"
+                   [class.is-invalid]="profileForm.get('email')?.touched && profileForm.get('email')?.invalid">
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('required')">Email is required.</div>
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('email')">Invalid email format.</div>
+          </div>
+
+          <!-- SECURE PASSWORD RESET PANEL [1.2.6] -->
+          <h6 class="fw-bold text-muted small text-uppercase mb-3 mt-4 pt-2 border-top">Change Password (Optional)</h6>
+          
+          <p class="text-muted small mb-3">Leave password fields blank if you do not wish to update your secure password.</p>
+
+          <!-- New Password -->
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium">New Password</label>
+            <input type="password" formControlName="password" class="form-control bg-light" placeholder="Leave blank to keep current"
+                   [class.is-invalid]="profileForm.get('password')?.touched && profileForm.get('password')?.invalid">
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('password')?.touched && profileForm.get('password')?.hasError('minlength')">Password must be at least 8 characters long.</div>
+            <div class="text-danger small mt-1" *ngIf="profileForm.get('password')?.touched && profileForm.get('password')?.hasError('pattern')">Password must contain at least 1 uppercase letter, 1 number, and 1 special symbol.</div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-medium">Confirm New Password</label>
+            <input type="password" formControlName="confirmPassword" class="form-control bg-light" placeholder="Leave blank to keep current"
+                   [class.is-invalid]="profileForm.touched && profileForm.hasError('mismatch')">
+            <div class="text-danger small mt-1" *ngIf="profileForm.touched && profileForm.hasError('mismatch')">Passwords do not match.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2 rounded-3">Update Profile</button>
+            <a [routerLink]="['/dashboard']" class="btn btn-light border py-2 px-4 rounded-3">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

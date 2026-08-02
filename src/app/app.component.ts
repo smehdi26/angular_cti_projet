@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-// Added RouterLinkActive import below [1.2.1]
-import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router'; 
+import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth';
@@ -9,36 +8,43 @@ import { NotificationService } from './services/notification';
 @Component({
   selector: 'app-root',
   standalone: true,
-  // Added RouterLinkActive to the metadata array below [1.2.6]
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule], 
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class AppComponent implements OnInit {
   currentUrl: string = '';
   unreadCount: number = 0;
-  currentUser: any = null;
+  currentUser: any = null; // Reactive property bound to the global sidebar footer card
 
   constructor(
     private router: Router, 
     private authService: AuthService,
     private notificationService: NotificationService
   ) {
+    // Track active route changes to handle sidebar rendering dynamically [1.2.1]
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl = event.url;
-      this.loadCurrentUser();
+      this.loadCurrentUser(); // Keep current user data state refreshed on navigation
     });
   }
 
   ngOnInit(): void {
+    // 1. Subscribe to the reactive unread notification counter stream [1.2.6]
     this.notificationService.unreadCount$.subscribe((count: number) => {
       this.unreadCount = count;
     });
 
+    // 2. Subscribe to the reactive session user profile stream [1.2.6]
+    this.authService.currentUser$.subscribe((user: any) => {
+      this.currentUser = user;
+    });
+
+    // 3. Trigger initial queries on startup
     this.notificationService.updateUnreadCount();
-    this.loadCurrentUser();
+    this.authService.updateCurrentUserInSidebar();
   }
 
   loadCurrentUser(): void {

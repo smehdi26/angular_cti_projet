@@ -43,6 +43,8 @@
           <button (click)="changeCategory('CLIENT')" [class.btn-outline-dark]="activeCategory === 'CLIENT'" [class.btn-light]="activeCategory !== 'CLIENT'" class="btn btn-xs border px-3 py-1 rounded-3">Clients</button>
           <button (click)="changeCategory('CONTRACT')" [class.btn-outline-dark]="activeCategory === 'CONTRACT'" [class.btn-light]="activeCategory !== 'CONTRACT'" class="btn btn-xs border px-3 py-1 rounded-3">Contracts</button>
           <button (click)="changeCategory('RESERVATION')" [class.btn-outline-dark]="activeCategory === 'RESERVATION'" [class.btn-light]="activeCategory !== 'RESERVATION'" class="btn btn-xs border px-3 py-1 rounded-3">Reservations</button>
+          <!-- Added Users Category Pill [1.2.1] -->
+          <button (click)="changeCategory('USER')" [class.btn-outline-dark]="activeCategory === 'USER'" [class.btn-light]="activeCategory !== 'USER'" class="btn btn-xs border px-3 py-1 rounded-3">Users</button>
         </div>
       </div>
     </div>
@@ -73,9 +75,15 @@
             </div>
             <div>
               <p class="mb-0 fw-medium text-dark">{{ notif.message }}</p>
-              <small class="text-muted" style="font-size: 11px;">
-                <i class="bi bi-clock me-1"></i> {{ notif.createdAt.substring(0, 16).replace('T', ' ') }}
-              </small>
+              <div class="d-flex align-items-center gap-2 mt-1">
+                <small class="text-muted" style="font-size: 11px;">
+                  <i class="bi bi-clock me-1"></i> {{ notif.createdAt.substring(0, 16).replace('T', ' ') }}
+                </small>
+                <!-- Added: Dynamic Category Label Badge [1.2.1, 1.2.6] -->
+                <span class="badge bg-light text-secondary border fw-normal" style="font-size: 10px; letter-spacing: 0.3px;">
+                  {{ notif.category }}
+                </span>
+              </div>
             </div>
           </div>
           
