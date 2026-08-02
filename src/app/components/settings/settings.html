@@ -1,0 +1,107 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="mb-4 pb-2 border-bottom">
+    <h3 class="fw-bold text-dark mb-1">System Settings</h3>
+    <p class="text-muted mb-0">Configure system variables, manage active directories, and hybrid database lists</p>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <!-- Left: Business Sectors Management (Hybrid List) [1.1.4, 1.2.1] -->
+    <div class="col-lg-8">
+      <div class="card p-4 border-0 shadow-sm bg-white">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-tag text-primary me-2"></i> Business Sectors</h5>
+        <p class="text-muted small mb-4">Add, modify, or toggle the activation state of business sectors used across client files.</p>
+
+        <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
+
+        <!-- Inline: Create New Sector -->
+        <div class="card p-3 mb-4 bg-light border border-light-subtle rounded-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-md-9">
+              <input type="text" [(ngModel)]="newSectorName" class="form-control bg-white" placeholder="Enter new custom sector name...">
+            </div>
+            <div class="col-md-3">
+              <button (click)="addSector()" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-plus"></i> Add Sector
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sectors Registry Table -->
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Sector Name</th>
+                <th style="width: 120px;">Status</th>
+                <th class="text-end" style="width: 180px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sector of sectors; track sector.id) {
+                <tr>
+                  <td>
+                    <!-- Read-only Name -->
+                    <span *ngIf="editingSector?.id !== sector.id" class="fw-semibold text-dark">{{ sector.name }}</span>
+                    <!-- Inline edit input field [1.2.6] -->
+                    <input *ngIf="editingSector?.id === sector.id" type="text" [(ngModel)]="editingName" class="form-control form-control-sm">
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="sector.active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                      {{ sector.active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <!-- Standard Actions -->
+                    <div class="d-flex gap-2 justify-content-end" *ngIf="editingSector?.id !== sector.id">
+                      <button (click)="startEdit(sector)" class="btn btn-sm btn-outline-warning" title="Edit Name">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button (click)="toggleStatus(sector)" class="btn btn-sm" [ngClass]="sector.active ? 'btn-outline-danger' : 'btn-outline-success'">
+                        <i class="bi" [ngClass]="sector.active ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+                        {{ sector.active ? 'Deactivate' : 'Activate' }}
+                      </button>
+                    </div>
+                    <!-- Editing Actions [1.2.6] -->
+                    <div class="d-flex gap-1 justify-content-end" *ngIf="editingSector?.id === sector.id">
+                      <button (click)="saveEdit()" class="btn btn-sm btn-success px-3">Save</button>
+                      <button (click)="cancelEdit()" class="btn btn-sm btn-light border">Cancel</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: General System Specifications -->
+    <div class="col-lg-4">
+      <div class="card p-4 border-0 shadow-sm bg-white h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i> System Information</h5>
+        <p class="text-muted small mb-4">Core environment configurations and server specifications.</p>
+        
+        <table class="table table-bordered border-light-subtle small">
+          <tr>
+            <th class="w-40 text-muted fw-semibold">Workspace Name</th>
+            <td class="fw-bold">CTI Client Manager</td>
+          </tr>
+          <tr>
+            <th class="text-muted fw-semibold">Frontend Port</th>
+            <td>localhost:4200 (Angular)</td>
+          </tr>
+          <tr>
+            <th class="text-muted fw-semibold">Backend Port</th>
+            <td>localhost:8090 (Spring API)</td>
+          </tr>
+          <tr>
+            <th class="text-muted fw-semibold">Relational Database</th>
+            <td>MySQL 8.0 (Localhost)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

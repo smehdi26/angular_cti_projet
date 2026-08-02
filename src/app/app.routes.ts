@@ -13,6 +13,7 @@ import { ContractListComponent } from './components/contract-list/contract-list'
 import { ClientListComponent } from './components/client-list/client-list';
 import { ProfileComponent } from './components/profile/profile'; // Import this [1.2.1]
 import { ContractDetailComponent } from './components/contract-detail/contract-detail'; // Import this
+import { SettingsComponent } from './components/settings/settings'; // Import this [1.2.1]
 
 
 export const routes: Routes = [
@@ -40,5 +41,8 @@ export const routes: Routes = [
   { path: 'contracts/:id', component: ContractDetailComponent },
 
   // Profile pathways [1.2.1]
-  { path: 'profile', component: ProfileComponent } // Register the profile path
+  { path: 'profile', component: ProfileComponent },
+  
+  // Settings pathways [1.2.1]
+  { path: 'settings', component: SettingsComponent } // Register the settings path// Register the profile path
 ];

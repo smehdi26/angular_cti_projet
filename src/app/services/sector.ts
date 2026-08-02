@@ -27,4 +27,9 @@ export class SectorService {
   toggleStatus(id: number, active: boolean): Observable<Sector> {
     return this.http.put<Sector>(`${this.apiUrl}/${id}/status`, null, { params: { active } });
   }
+
+  // PUT update sector details (name) [1.2.6]
+  updateSector(id: number, sector: Sector): Observable<Sector> {
+    return this.http.put<Sector>(`${this.apiUrl}/${id}`, sector);
+  }
 }
