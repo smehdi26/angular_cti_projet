@@ -141,6 +141,14 @@ export class ClientViewComponent implements OnInit {
     }
   }
 
+  // Safe helper to extract primary phone for routing
+  getPrimaryPhone(client: Client): string {
+    if (client && client.phones && client.phones.length > 0) {
+      return client.phones[0].phoneNumber;
+    }
+    return '00000000';
+  }
+  
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;
 

@@ -1,6 +1,7 @@
 <div class="d-flex">
   <!-- Global Sidebar -->
   <aside class="sidebar d-flex flex-column" *ngIf="showSidebar()">
+    <!-- Sidebar Brand Header -->
     <div class="px-4 py-4 d-flex align-items-center gap-3">
       <div class="bg-primary p-2 rounded text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
         <i class="bi bi-shield-lock-fill fs-5"></i>
@@ -11,15 +12,14 @@
       </div>
     </div>
     
+    <!-- Navigation Directories -->
     <nav class="nav flex-column mt-3 flex-grow-1">
-      <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active">
+      <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <i class="bi bi-grid-1x2-fill"></i> Dashboard
       </a>
-      <!-- Added Clients directory page link below [1.2.1] -->
       <a class="nav-link" [routerLink]="['/clients']" routerLinkActive="active">
         <i class="bi bi-people-fill"></i> Clients
       </a>
-    <!-- Added Contracts directory link below -->
       <a class="nav-link" [routerLink]="['/contracts']" routerLinkActive="active">
         <i class="bi bi-file-earmark-text-fill"></i> Contracts
       </a>
@@ -32,8 +32,29 @@
       </a>
     </nav>
     
-    <div class="p-3 border-top border-secondary">
-      <button (click)="logout()" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
+    <!-- Footer Panel: User Profile Brief Card & Log Out -->
+    <div class="p-3 border-top border-secondary-subtle" style="border-top-color: rgba(255,255,255,0.1) !important;" *ngIf="currentUser">
+      
+      <!-- User Profile Card [1.2.1] -->
+      <div class="d-flex align-items-center gap-3 mb-3 px-2">
+        <!-- Initials Avatar -->
+        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold text-center" 
+             style="width: 40px; height: 40px; font-size: 13px; min-width: 40px;">
+          <span>{{ currentUser.firstName.substring(0, 1).toUpperCase() }}{{ currentUser.lastName.substring(0, 1).toUpperCase() }}</span>
+        </div>
+        <!-- Name & Role -->
+        <div class="overflow-hidden">
+          <h6 class="text-white mb-0 fw-bold text-truncate" style="font-size: 14px;">
+            {{ currentUser.firstName }} {{ currentUser.lastName }}
+          </h6>
+          <small class="text-muted text-uppercase d-block" style="font-size: 9px; letter-spacing: 0.5px; opacity: 0.8;">
+            {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : 'User' }}
+          </small>
+        </div>
+      </div>
+      
+      <!-- Sign Out Action -->
+      <button (click)="logout()" class="btn btn-outline-danger btn-sm w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2">
         <i class="bi bi-box-arrow-right"></i> Sign Out
       </button>
     </div>

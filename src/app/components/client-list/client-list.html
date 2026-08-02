@@ -74,7 +74,8 @@
           </thead>
           <tbody>
             @for (client of filteredClients; track client.id) {
-              <tr>
+              <!-- Row Click navigates to profile, styled with a pointer cursor [1.2.1, 1.2.6] -->
+              <tr (click)="viewProfile(client)" style="cursor: pointer;">
                 <td>
                   <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
                 </td>
@@ -87,7 +88,8 @@
                   </div>
                 </td>
                 <td>
-                  <a href="mailto:{{ client.email }}" class="text-decoration-none text-muted">{{ client.email }}</a>
+                  <!-- Stop propagation prevents clicking the link from also firing the row's click navigation [1.2.6] -->
+                  <a href="mailto:{{ client.email }}" (click)="$event.stopPropagation()" class="text-decoration-none text-muted">{{ client.email }}</a>
                 </td>
                 <td>
                   <span *ngIf="client.sector" class="badge bg-light text-secondary border">{{ client.sector.name }}</span>
@@ -107,10 +109,9 @@
                   </div>
                 </td>
                 <td class="text-end">
-                  <div class="btn-group">
-                    <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-outline-info btn-sm px-3" title="View Profile">
-                      <i class="bi bi-eye"></i>
-                    </a>
+                  <!-- Stop propagation prevents clicking actions from firing row's click navigation [1.2.6] -->
+                  <div class="btn-group" (click)="$event.stopPropagation()">
+                    <!-- Removed redundant View button -->
                     <a [routerLink]="['/clients', getPrimaryPhone(client), 'edit']" class="btn btn-outline-warning btn-sm px-3" title="Edit Profile">
                       <i class="bi bi-pencil"></i>
                     </a>

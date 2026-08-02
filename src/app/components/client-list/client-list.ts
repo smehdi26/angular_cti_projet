@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router'; // Inject Router [1.2.1]
 import { ClientService, Client, Sector } from '../../services/client';
 import { SectorService } from '../../services/sector';
 
@@ -18,12 +18,10 @@ export class ClientListComponent implements OnInit {
   filteredClients: Client[] = [];
   sectors: Sector[] = [];
   
-  // Search & Filter Properties
   searchTerm: string = '';
   sectorFilter: string = '';
   cityFilter: string = '';
 
-  // 24 Tunisian Governorates list [1.1.4]
   citiesList: string[] = [
     'Ariana', 'Béja', 'Ben Arous', 'Bizerte', 'Gabès', 'Gafsa',
     'Jendouba', 'Kairouan', 'Kasserine', 'Kébili', 'Le Kef', 'Mahdia',
@@ -33,7 +31,8 @@ export class ClientListComponent implements OnInit {
 
   constructor(
     private clientService: ClientService,
-    private sectorService: SectorService
+    private sectorService: SectorService,
+    private router: Router // Inject Router [1.2.1]
   ) { }
 
   ngOnInit(): void {
@@ -61,22 +60,18 @@ export class ClientListComponent implements OnInit {
     });
   }
 
-  // Dual filter & keyword search [1.1.4, 1.2.6]
   applyFilters(): void {
     const term = this.searchTerm.toLowerCase().trim();
     let temp = this.clients;
 
-    // 1. Filter by Sector
     if (this.sectorFilter) {
       temp = temp.filter(client => client.sector && client.sector.id === Number(this.sectorFilter));
     }
 
-    // 2. Filter by City
     if (this.cityFilter) {
       temp = temp.filter(client => client.city === this.cityFilter);
     }
 
-    // 3. Search by Keyword
     if (term) {
       temp = temp.filter(client => 
         client.name.toLowerCase().includes(term) ||
@@ -103,6 +98,12 @@ export class ClientListComponent implements OnInit {
     return '00000000';
   }
 
+  // Programmatic navigation to profile page [1.2.6]
+  viewProfile(client: Client): void {
+    const phone = this.getPrimaryPhone(client);
+    this.router.navigate(['/clients', phone]);
+  }
+
   deleteClient(client: Client): void {
     const phone = this.getPrimaryPhone(client);
     if (phone === '00000000') return;
@@ -117,7 +118,6 @@ export class ClientListComponent implements OnInit {
     }
   }
 
-  // Interactive Table Column Sorter [1.1.4]
   sort(headerEl: HTMLTableCellElement): void {
     const table = headerEl.closest('table');
     if (!table) return;

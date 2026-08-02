@@ -1,41 +1,53 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterOutlet, RouterLink, NavigationEnd } from '@angular/router';
+// Added RouterLinkActive import below [1.2.1]
+import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router'; 
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth';
-import { NotificationService } from './services/notification'; // Import this
+import { NotificationService } from './services/notification';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule],
+  // Added RouterLinkActive to the metadata array below [1.2.6]
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule], 
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class AppComponent implements OnInit {
   currentUrl: string = '';
-  unreadCount: number = 0; // Local unread counter property
+  unreadCount: number = 0;
+  currentUser: any = null;
 
   constructor(
     private router: Router, 
     private authService: AuthService,
-    private notificationService: NotificationService // Inject this
+    private notificationService: NotificationService
   ) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl = event.url;
+      this.loadCurrentUser();
     });
   }
 
   ngOnInit(): void {
-    // 1. Subscribe to the reactive unread counter stream [1.2.6]
     this.notificationService.unreadCount$.subscribe((count: number) => {
       this.unreadCount = count;
     });
 
-    // 2. Query the initial unread count on startup
     this.notificationService.updateUnreadCount();
+    this.loadCurrentUser();
+  }
+
+  loadCurrentUser(): void {
+    const userJson = localStorage.getItem('currentUser');
+    if (userJson) {
+      this.currentUser = JSON.parse(userJson);
+    } else {
+      this.currentUser = null;
+    }
   }
 
   showSidebar(): boolean {
@@ -46,6 +58,7 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+    this.currentUser = null;
     this.router.navigate(['/login']);
   }
 }
