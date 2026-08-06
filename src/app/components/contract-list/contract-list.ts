@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ContractService, Contract } from '../../services/contract';
+import { ContractService, Contract, VisitSchedule } from '../../services/contract';
 import { SectorService } from '../../services/sector';
 import { Sector } from '../../services/client';
 import { NotificationService } from '../../services/notification';
@@ -44,9 +44,11 @@ export class ContractListComponent implements OnInit, AfterViewInit {
 
   yearsList = [2026, 2027, 2028, 2029, 2030];
 
-  // Added Scheduler Modal Properties [1.2.6]
+  // Scheduler Modal Properties [1.2.6]
   selectedContract: Contract | null = null;
   selectedDates: string[] = [];
+  selectedFiles: string[] = [];
+  selectedFileNames: string[] = [];
 
   constructor(
     private contractService: ContractService,
@@ -61,7 +63,7 @@ export class ContractListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Optional calendar setup if active tab is changed, handled dynamically
+    // Optional
   }
 
   loadContracts(): void {
@@ -122,7 +124,25 @@ export class ContractListComponent implements OnInit, AfterViewInit {
     this.selectedDates.push(contract.visitDate5 || '');
     this.selectedDates.push(contract.visitDate6 || '');
 
+    this.selectedFiles = [];
+    this.selectedFiles.push(contract.visitFile1Raw || '');
+    this.selectedFiles.push(contract.visitFile2Raw || '');
+    this.selectedFiles.push(contract.visitFile3Raw || '');
+    this.selectedFiles.push(contract.visitFile4Raw || '');
+    this.selectedFiles.push(contract.visitFile5Raw || '');
+    this.selectedFiles.push(contract.visitFile6Raw || '');
+
+    this.selectedFileNames = [];
+    this.selectedFileNames.push(contract.visitFileName1 || '');
+    this.selectedFileNames.push(contract.visitFileName2 || '');
+    this.selectedFileNames.push(contract.visitFileName3 || '');
+    this.selectedFileNames.push(contract.visitFileName4 || '');
+    this.selectedFileNames.push(contract.visitFileName5 || '');
+    this.selectedFileNames.push(contract.visitFileName6 || '');
+
     this.selectedDates = this.selectedDates.slice(0, visitsCount);
+    this.selectedFiles = this.selectedFiles.slice(0, visitsCount);
+    this.selectedFileNames = this.selectedFileNames.slice(0, visitsCount);
 
     const modalEl = document.getElementById('scheduleMonthsModal');
     if (modalEl) {
@@ -131,12 +151,37 @@ export class ContractListComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onFileSelected(event: any, index: number): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.contractService.uploadFile(file).subscribe({
+        next: (res) => {
+          this.selectedFiles[index] = res.filePath;
+          this.selectedFileNames[index] = res.fileName;
+        },
+        error: (err) => console.error('Upload failed', err)
+      });
+    }
+  }
+
+  clearVisitSlot(index: number): void {
+    if (confirm(`Clear all scheduled data for Visit #${index + 1}?`)) {
+      this.selectedDates[index] = '';
+      this.selectedFiles[index] = '';
+      this.selectedFileNames[index] = '';
+    }
+  }
+
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;
 
-    const filledDates = this.selectedDates.filter(d => d && d.trim() !== '');
+    const visitsPayload: VisitSchedule[] = this.selectedDates.map((date, idx) => ({
+      date: date,
+      filePath: this.selectedFiles[idx] || undefined,
+      fileName: this.selectedFileNames[idx] || undefined
+    }));
 
-    this.contractService.updateContractScheduleDates(this.selectedContract.id, filledDates).subscribe({
+    this.contractService.updateContractScheduleDates(this.selectedContract.id, visitsPayload).subscribe({
       next: () => {
         this.loadContracts();
         this.loadMonthlyAudit();

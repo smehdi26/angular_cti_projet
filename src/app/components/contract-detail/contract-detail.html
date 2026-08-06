@@ -1,5 +1,5 @@
 <div class="container py-5" *ngIf="contract">
-  <!-- Back Navigation Link (Hidden on PDF Export) -->
+  <!-- Back Navigation Link -->
   <div class="mb-4 no-print">
     <a [routerLink]="['/contracts']" class="text-decoration-none text-secondary d-inline-flex align-items-center gap-2">
       <i class="bi bi-arrow-left"></i> Back to Contracts Directory
@@ -7,9 +7,9 @@
   </div>
 
   <div class="row justify-content-center">
-    <!-- Main Content Area -->
     <div class="col-lg-8">
-      <!-- PRINT HEADER: Hidden on screen, visible only on PDF/print export [1.2.1] -->
+      
+      <!-- PRINT HEADER: Hidden on screen, visible only on PDF/print export -->
       <div class="print-header mb-5 pb-3 border-bottom d-none">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <!-- READ-ONLY DETAILS VIEW -->
+      <!-- READ ONLY VIEW -->
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="!isEditing">
         <div class="d-flex justify-content-between align-items-start mb-4 pb-2 border-bottom">
           <div class="d-flex align-items-center gap-3">
@@ -35,6 +35,7 @@
               <p class="text-muted mb-0 small">Contract Details Card</p>
             </div>
           </div>
+          
           <div class="no-print">
             <span class="badge" [ngClass]="contract.status === 'ACTIVE' ? 'bg-success text-white' : 'bg-danger text-white'">
               {{ contract.status === 'ACTIVE' ? 'Actif' : 'Suspendu' }}
@@ -51,11 +52,10 @@
             <tr>
               <th class="text-muted small fw-semibold">Entreprise (Client)</th>
               <td>
-                <!-- Hidden on PDF export to avoid raw hyperlink styles -->
                 <a [routerLink]="['/clients', contract.client ? contract.client.phones?.[0]?.phoneNumber : '00000000']" class="text-decoration-none fw-bold no-print">
                   {{ contract.client?.name }}
                 </a>
-                <span class="print-only d-none fw-bold text-dark">{{ contract.client?.name }}</span>
+                <span class="print-only d-none">{{ contract.client?.name }}</span>
               </td>
             </tr>
             <tr>
@@ -71,47 +71,70 @@
               <td class="small fw-bold text-dark">{{ contract.numberOfVisits }} visites par an</td>
             </tr>
             <tr>
-              <!-- Dynamically calculated next upcoming visit [1.1.4, 1.2.6] -->
               <th class="text-muted small fw-semibold text-primary">Prochaine visite</th>
               <td class="small fw-bold text-primary"><i class="bi bi-calendar-check-fill me-1"></i> {{ getNextVisit() }}</td>
             </tr>
             <tr>
               <th class="text-muted small fw-semibold">Les mois des visites</th>
               <td>
-                <!-- Integrated active inline-modal scheduler button [1.1.4, 1.2.1] -->
                 <div class="d-flex align-items-center gap-2">
                   <span class="small text-muted">{{ contract.monthsOfVisits || 'Aucun mois configuré' }}</span>
                   <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0 no-print" (click)="openScheduleModal(contract)" title="Schedule Dates">
                     <i class="bi bi-calendar-check text-primary fs-5"></i>
                   </button>
                 </div>
+                
+                <!-- Display active visit attachments inside details table [1.2.1, 1.2.6] -->
+                <div class="d-flex flex-wrap gap-1 mt-1 small" style="font-size: 11px;">
+                  <a *ngIf="contract.visitFile1" [href]="contract.visitFile1" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName1">
+                    <i class="bi bi-file-earmark-pdf"></i> #1
+                  </a>
+                  <a *ngIf="contract.visitFile2" [href]="contract.visitFile2" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName2">
+                    <i class="bi bi-file-earmark-pdf"></i> #2
+                  </a>
+                  <a *ngIf="contract.visitFile3" [href]="contract.visitFile3" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName3">
+                    <i class="bi bi-file-earmark-pdf"></i> #3
+                  </a>
+                  <a *ngIf="contract.visitFile4" [href]="contract.visitFile4" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName4">
+                    <i class="bi bi-file-earmark-pdf"></i> #4
+                  </a>
+                  <a *ngIf="contract.visitFile5" [href]="contract.visitFile5" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName5">
+                    <i class="bi bi-file-earmark-pdf"></i> #5
+                  </a>
+                  <a *ngIf="contract.visitFile6" [href]="contract.visitFile6" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName6">
+                    <i class="bi bi-file-earmark-pdf"></i> #6
+                  </a>
+                </div>
               </td>
             </tr>
           </table>
         </div>
 
-        <!-- ACTION BUTTONS: Hidden on PDF exports [1.2.1] -->
         <div class="d-flex flex-wrap gap-2 mt-2 no-print">
           <button (click)="toggleEdit()" class="btn btn-warning flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2">
             <i class="bi bi-pencil-square"></i> Modifier
           </button>
+          
           <button (click)="toggleStatus()" class="btn flex-grow-1 py-2" [ngClass]="contract.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'">
             <i class="bi" [ngClass]="contract.status === 'ACTIVE' ? 'bi-pause-fill' : 'bi-play-fill'"></i>
             {{ contract.status === 'ACTIVE' ? 'Suspendre' : 'Activer' }}
           </button>
+          
           <button (click)="renewContract()" class="btn btn-outline-success flex-grow-1 py-2">
             <i class="bi bi-arrow-repeat"></i> Renouveler Contrat
           </button>
+          
           <button (click)="exportToPdf()" class="btn btn-outline-dark flex-grow-1 py-2">
             <i class="bi bi-file-pdf"></i> Exporter PDF
           </button>
+          
           <button (click)="deleteContract()" class="btn btn-danger px-4 py-2">
             <i class="bi bi-trash"></i> Supprimer
           </button>
         </div>
       </div>
 
-      <!-- EDIT VIEW (IN-PLACE REPLACEMENT) [1.2.6] -->
+      <!-- EDIT VIEW -->
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="isEditing">
         <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
           <div class="bg-warning text-dark p-2 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
@@ -128,6 +151,7 @@
             <label class="form-label text-muted small fw-medium">Contract Name</label>
             <input type="text" formControlName="name" class="form-control bg-light">
           </div>
+
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Redevance</label>
             <select formControlName="redevance" class="form-select bg-light">
@@ -136,10 +160,12 @@
               <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
             </select>
           </div>
+
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Signature Date</label>
             <input type="date" formControlName="dateSignature" class="form-control bg-light">
           </div>
+
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-warning flex-grow-1 py-2">Save Changes</button>
             <button type="button" (click)="toggleEdit()" class="btn btn-light border py-2 px-4">Cancel</button>
@@ -147,10 +173,11 @@
         </form>
       </div>
 
-      <!-- TAB/SECTION: CONTRACT RENEWAL HISTORY LOG [1.2.1, 1.2.6] -->
+      <!-- TAB/SECTION: CONTRACT RENEWAL HISTORY LOG -->
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white mt-4" *ngIf="!isEditing && contract.history && contract.history.length > 0">
         <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Historique des renouvellements</h5>
         <p class="text-muted small mb-4">Past yearly contract schedules archived automatically upon renewal.</p>
+
         <div class="table-responsive">
           <table class="table table-striped align-middle mb-0">
             <thead class="table-light">
@@ -172,34 +199,67 @@
           </table>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
-<!-- MODAL: SCHEDULE VISIT DATES IN PLACE (ACCESSIBLE FROM DETAIL SHEET) [1.2.1, 1.2.6] -->
+<!-- MODAL: SCHEDULE VISIT DATES WITH FILE ATTACHMENTS & CANCELLATIONS [1.1.3, 1.2.1, 1.2.6] -->
 <div class="modal fade" id="scheduleMonthsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content shadow border-0 rounded-4" *ngIf="contract">
       <div class="modal-header bg-dark text-white border-0 py-3">
-        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Dates</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Parameters</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
         <p class="text-muted small mb-4">
-          Assign scheduled dates for <strong>{{ contract.name }}</strong> [1.1.4]. Invalid days outside the contract interval are automatically greyed out.
+          Assign scheduled dates and optional attachments for <strong>{{ contract.name }}</strong> [1.1.4]. 
         </p>
-        <!-- Dynamic Date Inputs with strict chronological interval constraints [1.1.4, 1.2.1] -->
+
+        <!-- Dynamic Date, File attachment, and Clear rows [1.1.3, 1.2.1, 1.2.6] -->
         <div class="d-flex flex-column gap-3">
-          <div *ngFor="let dateVal of selectedDates; let i = index; trackBy: trackByIndex" class="row align-items-center">
-            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Date</label>
-            <div class="col-sm-8">
-              <input type="date" [(ngModel)]="selectedDates[i]" [name]="'visit-date-' + i" [min]="getMinDateForVisit(contract, i)" [max]="getMaxDateForVisit(contract, i)" class="form-control bg-light">
+          <div *ngFor="let dateVal of selectedDates; let i = index; trackBy: trackByIndex" class="row align-items-center bg-light p-2 rounded-3">
+            <!-- Label -->
+            <label class="col-sm-2 form-label text-muted small fw-bold mb-0">Visit #{{ i + 1 }}</label>
+            
+            <!-- Date Picker -->
+            <div class="col-sm-3">
+              <input type="date" [(ngModel)]="selectedDates[i]" [name]="'visit-date-' + i" 
+                     [min]="getMinDateForVisit(contract, i)" 
+                     [max]="getMaxDateForVisit(contract, i)" 
+                     class="form-control form-control-sm bg-white">
+            </div>
+
+            <!-- Optional File Attachment Upload -->
+            <div class="col-sm-4">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-paperclip text-muted"></i></span>
+                <input type="file" (change)="onFileSelected($event, i)" class="form-control form-control-sm bg-white" style="font-size: 11px;">
+              </div>
+            </div>
+
+            <!-- Display active attachment link -->
+            <div class="col-sm-2 small text-truncate">
+              <a *ngIf="selectedFiles[i]" 
+                 [href]="'http://localhost:8090/api/contracts/files/' + selectedFiles[i]" 
+                 target="_blank" class="text-decoration-none fw-bold" [title]="selectedFileNames[i]">
+                <i class="bi bi-download"></i> {{ selectedFileNames[i] }}
+              </a>
+              <span *ngIf="!selectedFiles[i]" class="text-muted small">No file</span>
+            </div>
+
+            <!-- Individual Visit Cancellation/Clear Button [1.1.3] -->
+            <div class="col-sm-1 text-end">
+              <button type="button" (click)="clearVisitSlot(i)" class="btn btn-sm btn-link text-danger p-1" title="Cancel Visit">
+                <i class="bi bi-x-circle-fill fs-5"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
-        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Dates</button>
+        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Parameters</button>
         <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>

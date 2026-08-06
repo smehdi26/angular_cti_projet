@@ -16,17 +16,48 @@ export interface Contract {
   redevance: string; // ANNUELLE, SEMESTRIELLE, TRIMESTRIELLE
   dateSignature: string;
   numberOfVisits?: number;
-  monthsOfVisits?: string; // Calculated by backend dynamically [1.1.4]
-  visitDate1?: string;
-  visitDate2?: string;
-  visitDate3?: string;
-  visitDate4?: string;
-  visitDate5?: string;
-  visitDate6?: string;
+  monthsOfVisits?: string; // Automatically calculated in-memory [1.1.4]
+  status: string; // ACTIVE, SUSPENDED
   clientId: number;
   client?: Client;
-  status: string; // ACTIVE, SUSPENDED
-  history?: ContractHistory[]; // Dynamic yearly historical logs [1.2.6]
+  history?: ContractHistory[]; // Dynamic historical logs [1.2.6]
+
+  // Visit exact date properties [1.1.4, 1.2.6]
+  visitDate1?: string;
+  visitFile1?: string;
+  visitFileName1?: string;
+  visitFile1Raw?: string; // Stores unique raw filename reference
+
+  visitDate2?: string;
+  visitFile2?: string;
+  visitFileName2?: string;
+  visitFile2Raw?: string;
+
+  visitDate3?: string;
+  visitFile3?: string;
+  visitFileName3?: string;
+  visitFile3Raw?: string;
+
+  visitDate4?: string;
+  visitFile4?: string;
+  visitFileName4?: string;
+  visitFile4Raw?: string;
+
+  visitDate5?: string;
+  visitFile5?: string;
+  visitFileName5?: string;
+  visitFile5Raw?: string;
+
+  visitDate6?: string;
+  visitFile6?: string;
+  visitFileName6?: string;
+  visitFile6Raw?: string;
+}
+
+export interface VisitSchedule {
+  date: string;
+  filePath?: string;
+  fileName?: string;
 }
 
 @Injectable({
@@ -58,7 +89,7 @@ export class ContractService {
     let params: any = {};
     if (keyword) params.keyword = keyword;
     if (redevanceFilter) params.redevanceFilter = redevanceFilter;
-    if (activeFilter) params.activeFilter = activeFilter; // Added parameter mapping
+    if (activeFilter) params.activeFilter = activeFilter;
     return this.http.get<Contract[]>(this.apiUrl, { params });
   }
 
@@ -82,13 +113,20 @@ export class ContractService {
     return this.http.post<Contract>(`${this.apiUrl}/${id}/renew`, null);
   }
 
-  // 9. PUT: Update exact visit dates (N.D.V constraint-safe) [1.1.4, 1.2.1]
-  updateContractScheduleDates(id: number, dates: string[]): Observable<Contract> {
-    return this.http.put<Contract>(`${this.apiUrl}/${id}/schedule-dates`, dates);
+  // 9. PUT: Update exact visit dates (N.D.V constraint-safe) [1.1.4, 1.2.1, 1.2.6]
+  updateContractScheduleDates(id: number, visits: VisitSchedule[]): Observable<Contract> {
+    return this.http.put<Contract>(`${this.apiUrl}/${id}/schedule-dates`, visits);
   }
 
   // 10. GET: Fetch monthly scheduler list
   getMonthlySchedules(month: number, year: number): Observable<Contract[]> {
     return this.http.get<Contract[]>(`${this.apiUrl}/monthly`, { params: { month, year } });
+  }
+
+  // 11. POST: AJAX File Uploader [1.2.6]
+  uploadFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/upload`, formData);
   }
 }

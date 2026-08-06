@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClientService, Client } from '../../services/client';
-import { ContractService, Contract } from '../../services/contract';
+import { ContractService, Contract, VisitSchedule } from '../../services/contract';
 import { ReservationService } from '../../services/reservation';
 import { NotificationService } from '../../services/notification';
 
@@ -27,6 +27,9 @@ export class ClientViewComponent implements OnInit {
   // Modal Properties
   selectedContract: Contract | null = null;
   selectedDates: string[] = []; // Direct mapping array of exact dates (YYYY-MM-DD) [1.2.6]
+  selectedFiles: string[] = []; // Stores unique filePaths from server
+  selectedFileNames: string[] = []; // Stores original fileNames for links [1.2.6]
+
   monthsList: string[] = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -114,12 +117,12 @@ export class ClientViewComponent implements OnInit {
     });
   }
 
-  // Open Scheduler modal and initialize exact dates
+  // Open Scheduler modal and initialize exact dates & files
   openScheduleModal(contract: Contract): void {
     this.selectedContract = contract;
     const visitsCount = contract.numberOfVisits || 0;
 
-    // Load existing date values safely [1.2.6]
+    // Load existing date values
     this.selectedDates = [];
     this.selectedDates.push(contract.visitDate1 || '');
     this.selectedDates.push(contract.visitDate2 || '');
@@ -128,8 +131,28 @@ export class ClientViewComponent implements OnInit {
     this.selectedDates.push(contract.visitDate5 || '');
     this.selectedDates.push(contract.visitDate6 || '');
 
-    // Trim array to match exact visits count [1.2.6]
+    // Load existing file values [1.2.6]
+    this.selectedFiles = [];
+    this.selectedFiles.push(contract.visitFile1Raw || '');
+    this.selectedFiles.push(contract.visitFile2Raw || '');
+    this.selectedFiles.push(contract.visitFile3Raw || '');
+    this.selectedFiles.push(contract.visitFile4Raw || '');
+    this.selectedFiles.push(contract.visitFile5Raw || '');
+    this.selectedFiles.push(contract.visitFile6Raw || '');
+
+    // Load existing filename values [1.2.6]
+    this.selectedFileNames = [];
+    this.selectedFileNames.push(contract.visitFileName1 || '');
+    this.selectedFileNames.push(contract.visitFileName2 || '');
+    this.selectedFileNames.push(contract.visitFileName3 || '');
+    this.selectedFileNames.push(contract.visitFileName4 || '');
+    this.selectedFileNames.push(contract.visitFileName5 || '');
+    this.selectedFileNames.push(contract.visitFileName6 || '');
+
+    // Trim arrays to match exact visits count [1.2.6]
     this.selectedDates = this.selectedDates.slice(0, visitsCount);
+    this.selectedFiles = this.selectedFiles.slice(0, visitsCount);
+    this.selectedFileNames = this.selectedFileNames.slice(0, visitsCount);
 
     const modalEl = document.getElementById('scheduleMonthsModal');
     if (modalEl) {
@@ -138,13 +161,40 @@ export class ClientViewComponent implements OnInit {
     }
   }
 
+  // Upload file asynchronously via AJAX on select [1.2.6]
+  onFileSelected(event: any, index: number): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.contractService.uploadFile(file).subscribe({
+        next: (res) => {
+          this.selectedFiles[index] = res.filePath;
+          this.selectedFileNames[index] = res.fileName;
+        },
+        error: (err) => console.error('Upload failed', err)
+      });
+    }
+  }
+
+  // Cancels / Clears a specific visit index slot entirely [1.1.3, 1.2.6]
+  clearVisitSlot(index: number): void {
+    if (confirm(`Clear all scheduled data for Visit #${index + 1}?`)) {
+      this.selectedDates[index] = '';
+      this.selectedFiles[index] = '';
+      this.selectedFileNames[index] = '';
+    }
+  }
+
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;
 
-    // Filter out unselected inputs to support incremental scheduling
-    const filledDates = this.selectedDates.filter(d => d && d.trim() !== '');
+    // Map into list DTO matching backend structure [1.2.6]
+    const visitsPayload: VisitSchedule[] = this.selectedDates.map((date, idx) => ({
+      date: date,
+      filePath: this.selectedFiles[idx] || undefined,
+      fileName: this.selectedFileNames[idx] || undefined
+    }));
 
-    this.contractService.updateContractScheduleDates(this.selectedContract.id, filledDates).subscribe({
+    this.contractService.updateContractScheduleDates(this.selectedContract.id, visitsPayload).subscribe({
       next: () => {
         this.loadContracts(); // Refresh
         this.notificationService.updateUnreadCount();
