@@ -1,5 +1,5 @@
 <div class="d-flex">
-  <!-- Global Sidebar -->
+  <!-- Global Sidebar (Hidden on Login and Register Screens) -->
   <aside class="sidebar d-flex flex-column" *ngIf="showSidebar()">
     <!-- Sidebar Brand Header -->
     <div class="px-4 py-4 d-flex align-items-center gap-3">
@@ -12,47 +12,57 @@
       </div>
     </div>
     
-    <!-- Navigation Directories -->
+    <!-- Navigation Directories [1.2.1] -->
     <nav class="nav flex-column mt-3 flex-grow-1">
+      <!-- Dashboard (Strict Route Matching) -->
       <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <i class="bi bi-grid-1x2-fill"></i> Dashboard
       </a>
+      
+      <!-- Clients Directory Link -->
       <a class="nav-link" [routerLink]="['/clients']" routerLinkActive="active">
         <i class="bi bi-people-fill"></i> Clients
       </a>
+      
+      <!-- Contracts Directory Link -->
       <a class="nav-link" [routerLink]="['/contracts']" routerLinkActive="active">
         <i class="bi bi-file-earmark-text-fill"></i> Contracts
       </a>
+      
+      <!-- Reservations Directory Link -->
       <a class="nav-link" [routerLink]="['/reservations']" routerLinkActive="active">
         <i class="bi bi-calendar-event-fill"></i> Reservations
       </a>
+      
+      <!-- Notifications Directory Link (With Reactive Unread Badge) -->
       <a class="nav-link" [routerLink]="['/notifications']" routerLinkActive="active">
         <i class="bi bi-bell-fill"></i> Notifications
         <span *ngIf="unreadCount > 0" class="badge bg-danger ms-auto rounded-pill">{{ unreadCount }}</span>
       </a>
-      <!-- Added Settings link below [1.2.1] -->
+
+      <!-- Settings Directory Link -->
       <a class="nav-link" [routerLink]="['/settings']" routerLinkActive="active">
         <i class="bi bi-gear-fill"></i> Settings
       </a>
     </nav>
     
-    <!-- Footer Panel: User Profile Brief Card (Made clickable using routerLink) [1.2.1] -->
+    <!-- Footer Panel: User Profile Brief Card & Log Out -->
     <div class="p-3 border-top border-secondary-subtle" style="border-top-color: rgba(255,255,255,0.1) !important;" *ngIf="currentUser">
       
-      <!-- Clickable Profile Card -->
+      <!-- Clickable Profile Card Redirecting to /profile [1.2.1] -->
       <a [routerLink]="['/profile']" class="d-flex align-items-center gap-3 mb-3 px-2 text-decoration-none" style="cursor: pointer;">
         <!-- Initials Avatar -->
         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold text-center" 
              style="width: 40px; height: 40px; font-size: 13px; min-width: 40px;">
           <span>{{ currentUser.firstName.substring(0, 1).toUpperCase() }}{{ currentUser.lastName.substring(0, 1).toUpperCase() }}</span>
         </div>
-        <!-- Name & Role -->
+        <!-- Name & Dynamic Role Translation [1.2.1, 1.2.6] -->
         <div class="overflow-hidden">
           <h6 class="text-white mb-0 fw-bold text-truncate" style="font-size: 14px;">
             {{ currentUser.firstName }} {{ currentUser.lastName }}
           </h6>
           <small class="text-muted text-uppercase d-block" style="font-size: 9px; letter-spacing: 0.5px; opacity: 0.8;">
-            {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : 'User' }}
+            {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : (currentUser.role === 'ROLE_HR' ? 'Human Resources' : 'IT Technician') }}
           </small>
         </div>
       </a>
@@ -64,7 +74,7 @@
     </div>
   </aside>
 
-  <!-- Content Workspace Viewport -->
+  <!-- Main Content Viewport [1.2.1, 1.2.6] -->
   <main class="flex-grow-1" [style.margin-left]="showSidebar() ? '260px' : '0'" style="min-height: 100vh;">
     <router-outlet></router-outlet>
   </main>

@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ClientService } from '../../services/client';
+import { ClientService, Client, Sector } from '../../services/client';
 import { SectorService } from '../../services/sector';
-import { Sector } from '../../services/client';
+import { CityService, City } from '../../services/city'; // Import CityService [1.2.1]
 
 @Component({
   selector: 'app-client-add',
@@ -17,20 +17,14 @@ export class ClientAddComponent implements OnInit {
 
   clientForm!: FormGroup;
   sectors: Sector[] = [];
+  citiesList: string[] = []; // Loaded dynamically from DB
   errorMessage: string = '';
-
-  // 24 Tunisian Governorates list [1.1.4]
-  citiesList: string[] = [
-    'Ariana', 'Béja', 'Ben Arous', 'Bizerte', 'Gabès', 'Gafsa',
-    'Jendouba', 'Kairouan', 'Kasserine', 'Kébili', 'Le Kef', 'Mahdia',
-    'La Manouba', 'Médenine', 'Monastir', 'Nabeul', 'Sfax', 'Sidi Bouzid',
-    'Siliana', 'Sousse', 'Tataouine', 'Tozeur', 'Tunis', 'Zaghouan'
-  ];
 
   constructor(
     private fb: FormBuilder,
     private clientService: ClientService,
     private sectorService: SectorService,
+    private cityService: CityService, // Inject CityService
     private router: Router
   ) { }
 
@@ -40,7 +34,7 @@ export class ClientAddComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       description: [''],
       address: [''],
-      city: [''], // Will bind to the dropdown select
+      city: [''], // Bound to the dynamically loaded governorates dropdown select [1.2.1]
       contact: [''],
       website: [''],
       sectorId: [''],
@@ -48,6 +42,7 @@ export class ClientAddComponent implements OnInit {
     });
 
     this.loadSectors();
+    this.loadActiveCities();
   }
 
   loadSectors(): void {
@@ -56,6 +51,16 @@ export class ClientAddComponent implements OnInit {
         this.sectors = data;
       },
       error: (err: any) => console.error('Failed to load active sectors', err)
+    });
+  }
+
+  // Fetch active governorate strings from the database dynamically [1.2.6]
+  loadActiveCities(): void {
+    this.cityService.getActiveCities().subscribe({
+      next: (data: City[]) => {
+        this.citiesList = data.map((c: City) => c.name);
+      },
+      error: (err: any) => console.error('Failed to load active cities', err)
     });
   }
 
@@ -88,12 +93,12 @@ export class ClientAddComponent implements OnInit {
     }
 
     const formValue = this.clientForm.value;
-    const request = {
+    const request: Client = {
       name: formValue.name,
       email: formValue.email,
       description: formValue.description,
-      address: formValue.address || undefined,
-      city: formValue.city || undefined, // Binds empty selection safely [1.2.1]
+      address: formValue.address || undefined, // Binds undefined to keep type safety [1.2.1]
+      city: formValue.city || undefined,       // Binds undefined to keep type safety [1.2.1]
       contact: formValue.contact || undefined,
       website: formValue.website || undefined,
       sectorId: formValue.sectorId ? Number(formValue.sectorId) : undefined,

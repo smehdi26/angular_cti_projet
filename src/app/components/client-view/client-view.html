@@ -224,36 +224,35 @@
   </div>
 </div>
 
-<!-- MODAL: SCHEDULE VISIT MONTHS IN PLACE [1.2.1] -->
+<!-- MODAL: SCHEDULE VISIT DATES IN PLACE [1.2.1] -->
 <div class="modal fade" id="scheduleMonthsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow border-0 rounded-4" *ngIf="selectedContract">
       <div class="modal-header bg-dark text-white border-0 py-3">
-        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Months</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Dates</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
         <p class="text-muted small mb-4">
-          Please assign up to <strong>{{ selectedContract.numberOfVisits }}</strong> scheduled months in chronological order for 
-          <strong>{{ selectedContract.name }}</strong> [1.1.4].
+          Assign scheduled dates for <strong>{{ selectedContract.name }}</strong> [1.1.4]. 
+          Invalid days outside the contract interval are automatically greyed out.
         </p>
 
-        <!-- Dynamically generates exactly N dropdowns filtered by active interval boundaries -->
+        <!-- Generates date pickers restricted strictly to their chronological interval [1.1.4, 1.2.1] -->
         <div class="d-flex flex-column gap-3">
-          <div *ngFor="let monthVal of selectedMonths; let i = index; trackBy: trackByIndex" class="row align-items-center">
-            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Month</label>
+          <div *ngFor="let dateVal of selectedDates; let i = index; trackBy: trackByIndex" class="row align-items-center">
+            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Date</label>
             <div class="col-sm-8">
-              <select [(ngModel)]="selectedMonths[i]" [name]="'visit-month-' + i" class="form-select bg-light">
-                <option value="">-- Select Month --</option> 
-                <!-- Displays ONLY the months belonging to this specific visit's period [1.1.4, 1.2.6] -->
-                <option *ngFor="let m of getAllowedMonthsForVisit(selectedContract, i)" [value]="m">{{ m }}</option>
-              </select>
+              <input type="date" [(ngModel)]="selectedDates[i]" [name]="'visit-date-' + i" 
+                     [min]="getMinDateForVisit(selectedContract, i)" 
+                     [max]="getMaxDateForVisit(selectedContract, i)" 
+                     class="form-control bg-light">
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
-        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Months</button>
+        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Dates</button>
         <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>

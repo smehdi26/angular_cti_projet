@@ -27,11 +27,11 @@ export class RegisterComponent implements OnInit {
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
+      role: ['', [Validators.required]], // Added validation rule [1.2.6]
       password: ['', [
         Validators.required,
         Validators.minLength(8),
-        // Strong Password regex: 1 uppercase, 1 number, 1 special character
-        Validators.pattern('^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?":{}|<>]).+$')
+        Validators.pattern('^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>]).+$')
       ]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
@@ -58,8 +58,9 @@ export class RegisterComponent implements OnInit {
       firstName: this.registerForm.value.firstName,
       lastName: this.registerForm.value.lastName,
       email: this.registerForm.value.email,
+      role: this.registerForm.value.role, // Map the role [1.2.6]
       password: this.registerForm.value.password,
-      confirmPassword: this.registerForm.value.confirmPassword // Added field
+      confirmPassword: this.registerForm.value.confirmPassword
     };
 
     this.authService.register(request).subscribe({

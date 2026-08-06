@@ -9,7 +9,13 @@ export interface Contract {
   redevance: string; // ANNUELLE, SEMESTRIELLE, TRIMESTRIELLE
   dateSignature: string;
   numberOfVisits?: number;
-  monthsOfVisits?: string;
+  monthsOfVisits?: string; // Automatically calculated by backend getter [1.1.4]
+  visitDate1?: string;
+  visitDate2?: string;
+  visitDate3?: string;
+  visitDate4?: string;
+  visitDate5?: string;
+  visitDate6?: string;
   clientId: number;
   client?: Client; // ADDED: Declares the nested client object
   status: string; // Added field: ACTIVE, SUSPENDED
@@ -63,5 +69,14 @@ export class ContractService {
 
   renewContract(id: number): Observable<Contract> {
     return this.http.post<Contract>(`${this.apiUrl}/${id}/renew`, null);
+  }
+
+  // Add these inside the ContractService class:
+  getMonthlySchedules(month: number, year: number): Observable<Contract[]> {
+    return this.http.get<Contract[]>(`${this.apiUrl}/monthly`, { params: { month, year } });
+  }
+
+  updateContractScheduleDates(id: number, dates: string[]): Observable<Contract> {
+    return this.http.put<Contract>(`${this.apiUrl}/${id}/schedule-dates`, dates);
   }
 }

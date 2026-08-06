@@ -1,106 +1,282 @@
 <div class="container-fluid py-4">
-  <!-- Header -->
   <div class="mb-4 pb-2 border-bottom">
     <h3 class="fw-bold text-dark mb-1">System Settings</h3>
-    <p class="text-muted mb-0">Configure system variables, manage active directories, and hybrid database lists</p>
+    <p class="text-muted mb-0">Configure operational parameters, manage users, and update directories</p>
   </div>
 
-  <div class="row g-4 mb-5">
-    <!-- Left: Business Sectors Management (Hybrid List) [1.1.4, 1.2.1] -->
-    <div class="col-lg-8">
-      <div class="card p-4 border-0 shadow-sm bg-white">
-        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-tag text-primary me-2"></i> Business Sectors</h5>
-        <p class="text-muted small mb-4">Add, modify, or toggle the activation state of business sectors used across client files.</p>
-
-        <div *ngIf="errorMessage" class="alert alert-danger mb-3">{{ errorMessage }}</div>
-
-        <!-- Inline: Create New Sector -->
-        <div class="card p-3 mb-4 bg-light border border-light-subtle rounded-3">
-          <div class="row g-2 align-items-center">
-            <div class="col-md-9">
-              <input type="text" [(ngModel)]="newSectorName" class="form-control bg-white" placeholder="Enter new custom sector name...">
-            </div>
-            <div class="col-md-3">
-              <button (click)="addSector()" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
-                <i class="bi bi-plus"></i> Add Sector
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sectors Registry Table -->
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Sector Name</th>
-                <th style="width: 120px;">Status</th>
-                <th class="text-end" style="width: 180px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (sector of sectors; track sector.id) {
-                <tr>
-                  <td>
-                    <!-- Read-only Name -->
-                    <span *ngIf="editingSector?.id !== sector.id" class="fw-semibold text-dark">{{ sector.name }}</span>
-                    <!-- Inline edit input field [1.2.6] -->
-                    <input *ngIf="editingSector?.id === sector.id" type="text" [(ngModel)]="editingName" class="form-control form-control-sm">
-                  </td>
-                  <td>
-                    <span class="badge" [ngClass]="sector.active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
-                      {{ sector.active ? 'Active' : 'Inactive' }}
-                    </span>
-                  </td>
-                  <td class="text-end">
-                    <!-- Standard Actions -->
-                    <div class="d-flex gap-2 justify-content-end" *ngIf="editingSector?.id !== sector.id">
-                      <button (click)="startEdit(sector)" class="btn btn-sm btn-outline-warning" title="Edit Name">
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button (click)="toggleStatus(sector)" class="btn btn-sm" [ngClass]="sector.active ? 'btn-outline-danger' : 'btn-outline-success'">
-                        <i class="bi" [ngClass]="sector.active ? 'bi-pause-fill' : 'bi-play-fill'"></i>
-                        {{ sector.active ? 'Deactivate' : 'Activate' }}
-                      </button>
-                    </div>
-                    <!-- Editing Actions [1.2.6] -->
-                    <div class="d-flex gap-1 justify-content-end" *ngIf="editingSector?.id === sector.id">
-                      <button (click)="saveEdit()" class="btn btn-sm btn-success px-3">Save</button>
-                      <button (click)="cancelEdit()" class="btn btn-sm btn-light border">Cancel</button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+  <div class="row g-4">
+    <!-- Left Panel: Sub-navigation Settings Tab selectors (Notion Style) [1.2.1] -->
+    <div class="col-lg-3">
+      <div class="card p-3 border-0 shadow-sm bg-white">
+        <nav class="nav flex-column gap-1">
+          <button (click)="switchSubTab('users')" [class.btn-primary]="activeSubTab === 'users'" [class.btn-light]="activeSubTab !== 'users'" class="btn text-start d-flex align-items-center gap-2 py-2 px-3 rounded-2">
+            <i class="bi bi-people-fill"></i> User Management
+          </button>
+          <button (click)="switchSubTab('roles')" [class.btn-primary]="activeSubTab === 'roles'" [class.btn-light]="activeSubTab !== 'roles'" class="btn text-start d-flex align-items-center gap-2 py-2 px-3 rounded-2">
+            <i class="bi bi-shield-lock-fill"></i> Roles & Permissions
+          </button>
+          <button (click)="switchSubTab('sectors')" [class.btn-primary]="activeSubTab === 'sectors'" [class.btn-light]="activeSubTab !== 'sectors'" class="btn text-start d-flex align-items-center gap-2 py-2 px-3 rounded-2">
+            <i class="bi bi-tag-fill"></i> Client Sectors
+          </button>
+          <button (click)="switchSubTab('cities')" [class.btn-primary]="activeSubTab === 'cities'" [class.btn-light]="activeSubTab !== 'cities'" class="btn text-start d-flex align-items-center gap-2 py-2 px-3 rounded-2">
+            <i class="bi bi-geo-alt-fill"></i> Cities & Governorates
+          </button>
+          <button (click)="switchSubTab('notifications')" [class.btn-primary]="activeSubTab === 'notifications'" [class.btn-light]="activeSubTab !== 'notifications'" class="btn text-start d-flex align-items-center gap-2 py-2 px-3 rounded-2">
+            <i class="bi bi-bell-fill"></i> Notification Config
+          </button>
+        </nav>
       </div>
     </div>
 
-    <!-- Right: General System Specifications -->
-    <div class="col-lg-4">
+    <!-- Right Panel: Dynamic Content Viewport -->
+    <div class="col-lg-9">
       <div class="card p-4 border-0 shadow-sm bg-white h-100">
-        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i> System Information</h5>
-        <p class="text-muted small mb-4">Core environment configurations and server specifications.</p>
-        
-        <table class="table table-bordered border-light-subtle small">
-          <tr>
-            <th class="w-40 text-muted fw-semibold">Workspace Name</th>
-            <td class="fw-bold">CTI Client Manager</td>
-          </tr>
-          <tr>
-            <th class="text-muted fw-semibold">Frontend Port</th>
-            <td>localhost:4200 (Angular)</td>
-          </tr>
-          <tr>
-            <th class="text-muted fw-semibold">Backend Port</th>
-            <td>localhost:8090 (Spring API)</td>
-          </tr>
-          <tr>
-            <th class="text-muted fw-semibold">Relational Database</th>
-            <td>MySQL 8.0 (Localhost)</td>
-          </tr>
-        </table>
+        <div *ngIf="successMessage" class="alert alert-success mb-3"><i class="bi bi-check-circle-fill"></i> {{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}</div>
+
+        <!-- SUB-TAB 1: USER MANAGEMENT [1.1.4] -->
+        <div *ngIf="activeSubTab === 'users'">
+          <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-people-fill text-primary me-1"></i> User Accounts Register</h5>
+          <p class="text-muted small mb-4">Modify system roles, evaluate active users, and manage account deletions.</p>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>User Initials</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>System Role</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of users; track u.id) {
+                  <tr>
+                    <td>
+                      <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; font-size: 13px;">
+                        {{ u.firstName.substring(0,1) }}{{ u.lastName.substring(0,1) }}
+                      </div>
+                    </td>
+                    <td class="fw-semibold text-dark">{{ u.firstName }} {{ u.lastName }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                      <select #roleSelect (change)="changeUserRole(u, roleSelect)" class="form-select form-select-sm" style="width: 160px;">
+                        <option value="ROLE_ADMIN" [selected]="u.role === 'ROLE_ADMIN'">Administrator</option>
+                        <option value="ROLE_HR" [selected]="u.role === 'ROLE_HR'">Human Resources</option>
+                        <option value="ROLE_TECHNICIAN" [selected]="u.role === 'ROLE_TECHNICIAN'">IT Technician</option>
+                      </select>
+                    </td>
+                    <td class="text-end">
+                      <button (click)="deleteUser(u.id)" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 2: ROLES & PERMISSIONS [1.1.4] -->
+        <div *ngIf="activeSubTab === 'roles'">
+          <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-shield-lock-fill text-primary me-1"></i> Permissions Access Matrix</h5>
+          <p class="text-muted small mb-4">Click switches inside the matrix below to configure access privileges across system domains.</p>
+
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Workspace Role</th>
+                  <th>Clients Dir</th>
+                  <th>Reservations Log</th>
+                  <th>Contracts Register</th>
+                  <th>System Settings</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (role of rolesList; track role) {
+                  <tr>
+                    <td class="fw-bold text-dark text-start">
+                      {{ role === 'ROLE_ADMIN' ? 'Administrator' : (role === 'ROLE_HR' ? 'Human Resources' : 'IT Technician') }}
+                    </td>
+                    <td>
+                      <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" [checked]="permissionsMatrix[role]['Clients']" (change)="togglePermission(role, 'Clients')">
+                      </div>
+                    </td>
+                    <td>
+                      <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" [checked]="permissionsMatrix[role]['Reservations']" (change)="togglePermission(role, 'Reservations')">
+                      </div>
+                    </td>
+                    <td>
+                      <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" [checked]="permissionsMatrix[role]['Contracts']" (change)="togglePermission(role, 'Contracts')">
+                      </div>
+                    </td>
+                    <td>
+                      <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" [checked]="permissionsMatrix[role]['Settings']" (change)="togglePermission(role, 'Settings')">
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 3: CLIENT SECTORS [1.1.4] -->
+        <div *ngIf="activeSubTab === 'sectors'">
+          <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-tag-fill text-primary me-1"></i> Hybrid Sectors Log</h5>
+          <p class="text-muted small mb-4">Add, view, or toggle the activation state of business categories.</p>
+
+          <div class="input-group mb-4">
+            <input type="text" [(ngModel)]="newSectorName" class="form-control" placeholder="Enter new custom sector name...">
+            <button (click)="addSector()" class="btn btn-primary px-3">+ Add Sector</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Sector Name</th>
+                  <th style="width: 120px;">State</th>
+                  <th class="text-end" style="width: 140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (sector of sectors; track sector.id) {
+                  <tr>
+                    <td class="fw-semibold text-dark">{{ sector.name }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="sector.active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                        {{ sector.active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <button (click)="toggleSector(sector)" class="btn btn-sm" [ngClass]="sector.active ? 'btn-outline-danger' : 'btn-outline-success'">
+                        <i class="bi" [ngClass]="sector.active ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+                        {{ sector.active ? 'Deactivate' : 'Activate' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 4: CITIES & GOVERNORATES [1.1.4] -->
+        <div *ngIf="activeSubTab === 'cities'">
+          <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-geo-alt-fill text-primary me-1"></i> Cities & Governorates Database</h5>
+          <p class="text-muted small mb-3">Add or enable/disable Tunisian governorate values dynamically used inside profile forms.</p>
+
+          <!-- Search & Add Grid -->
+          <div class="row g-2 mb-4">
+            <div class="col-md-7">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" [(ngModel)]="citySearchTerm" (input)="applyCityFilter()" class="form-control bg-light" placeholder="Search cities...">
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="input-group input-group-sm">
+                <input type="text" [(ngModel)]="newCityName" class="form-control" placeholder="Add custom city...">
+                <button (click)="addCity()" class="btn btn-primary px-3">+ Add</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>Governorate Name</th>
+                  <th style="width: 120px;">State</th>
+                  <th class="text-end" style="width: 140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (city of filteredCities; track city.id) {
+                  <tr>
+                    <td class="fw-semibold text-dark">{{ city.name }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="city.active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                        {{ city.active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <button (click)="toggleCity(city)" class="btn btn-sm" [ngClass]="city.active ? 'btn-outline-danger' : 'btn-outline-success'">
+                        <i class="bi" [ngClass]="city.active ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+                        {{ city.active ? 'Disable' : 'Enable' }}
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 5: NOTIFICATION SETTINGS [1.1.4] -->
+        <div *ngIf="activeSubTab === 'notifications'">
+          <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-bell-fill text-primary me-1"></i> Notification Variables Configuration</h5>
+          <p class="text-muted small mb-4">Toggle system channels and specific reminder intervals below.</p>
+
+          <div class="d-flex flex-column gap-4 mb-4">
+            <!-- Email -->
+            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+              <div>
+                <h6 class="fw-bold mb-1 text-dark">Email Alerts</h6>
+                <small class="text-muted">Transmit automated email updates to administrators on database modifications.</small>
+              </div>
+              <div class="form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="emailNotif">
+              </div>
+            </div>
+
+            <!-- Browser -->
+            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+              <div>
+                <h6 class="fw-bold mb-1 text-dark">Browser Notifications (Toasts)</h6>
+                <small class="text-muted">Render real-time pop-up notifications inside your active workspace directory.</small>
+              </div>
+              <div class="form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="browserNotif">
+              </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+              <div>
+                <h6 class="fw-bold mb-1 text-dark">Reservation 1-Hour Reminders</h6>
+                <small class="text-muted">Calculate and display warning cards starting 1 hour before scheduled customer meetings.</small>
+              </div>
+              <div class="form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="resReminders">
+              </div>
+            </div>
+
+            <!-- Expiration -->
+            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+              <div>
+                <h6 class="fw-bold mb-1 text-dark">Contract Expiration Warnings</h6>
+                <small class="text-muted">Generate warning notifications 30 days before active maintenance agreement periods expire.</small>
+              </div>
+              <div class="form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="contractReminders">
+              </div>
+            </div>
+          </div>
+
+          <button (click)="saveNotificationSettings()" class="btn btn-primary w-100 py-2 rounded-3">
+            Save Operational Variables
+          </button>
+        </div>
+
       </div>
     </div>
   </div>

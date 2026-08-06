@@ -4,11 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClientService, Client } from '../../services/client';
 import { ContractService, Contract } from '../../services/contract';
-import { ReservationService } from '../../services/reservation'; // Import ReservationService [1.2.1]
+import { ReservationService } from '../../services/reservation';
 import { NotificationService } from '../../services/notification';
 
-declare var bootstrap: any; // ADDED: Declares the global Bootstrap variable [1.2.6]
-
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-client-view',
@@ -27,7 +26,7 @@ export class ClientViewComponent implements OnInit {
 
   // Modal Properties
   selectedContract: Contract | null = null;
-  selectedMonths: string[] = [];
+  selectedDates: string[] = []; // Direct mapping array of exact dates (YYYY-MM-DD) [1.2.6]
   monthsList: string[] = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -36,7 +35,7 @@ export class ClientViewComponent implements OnInit {
   constructor(
     private clientService: ClientService,
     private contractService: ContractService,
-    private reservationService: ReservationService, // Inject ReservationService [1.2.1]
+    private reservationService: ReservationService,
     private notificationService: NotificationService,
     private route: ActivatedRoute
   ) { }
@@ -48,37 +47,31 @@ export class ClientViewComponent implements OnInit {
 
   loadProfile(): void {
     this.clientService.getClientByPhone(this.phone).subscribe({
-      next: (data) => {
+      next: (data: Client) => {
         this.client = data;
         this.loadReservations();
         this.loadContracts();
       },
-      error: (err: any) => {
-        console.error('Failed to load client details', err);
-      }
+      error: (err: any) => console.error('Failed to load client details', err)
     });
   }
 
   loadReservations(): void {
     this.clientService.getClientReservations(this.phone).subscribe({
-      next: (data) => {
+      next: (data: any[]) => {
         this.reservations = data;
       },
-      error: (err: any) => {
-        console.error('Failed to load reservation log', err);
-      }
+      error: (err: any) => console.error('Failed to load reservation log', err)
     });
   }
 
   loadContracts(): void {
     if (this.client && this.client.id) {
       this.contractService.getContractsByClient(this.client.id).subscribe({
-        next: (data) => {
+        next: (data: Contract[]) => {
           this.contracts = data;
         },
-        error: (err: any) => {
-          console.error('Failed to load contracts log', err);
-        }
+        error: (err: any) => console.error('Failed to load contracts log', err)
       });
     }
   }
@@ -90,9 +83,7 @@ export class ClientViewComponent implements OnInit {
           this.loadContracts();
           this.notificationService.updateUnreadCount();
         },
-        error: (err: any) => {
-          console.error('Failed to delete contract', err);
-        }
+        error: (err: any) => console.error('Failed to delete contract', err)
       });
     }
   }
@@ -123,16 +114,22 @@ export class ClientViewComponent implements OnInit {
     });
   }
 
+  // Open Scheduler modal and initialize exact dates
   openScheduleModal(contract: Contract): void {
     this.selectedContract = contract;
-    
-    const existing = contract.monthsOfVisits ? contract.monthsOfVisits.split(', ') : [];
     const visitsCount = contract.numberOfVisits || 0;
 
-    this.selectedMonths = [];
-    for (let i = 0; i < visitsCount; i++) {
-      this.selectedMonths.push(existing[i] || '');
-    }
+    // Load existing date values safely [1.2.6]
+    this.selectedDates = [];
+    this.selectedDates.push(contract.visitDate1 || '');
+    this.selectedDates.push(contract.visitDate2 || '');
+    this.selectedDates.push(contract.visitDate3 || '');
+    this.selectedDates.push(contract.visitDate4 || '');
+    this.selectedDates.push(contract.visitDate5 || '');
+    this.selectedDates.push(contract.visitDate6 || '');
+
+    // Trim array to match exact visits count [1.2.6]
+    this.selectedDates = this.selectedDates.slice(0, visitsCount);
 
     const modalEl = document.getElementById('scheduleMonthsModal');
     if (modalEl) {
@@ -141,56 +138,15 @@ export class ClientViewComponent implements OnInit {
     }
   }
 
-  // Safe helper to extract primary phone for routing
-  getPrimaryPhone(client: Client): string {
-    if (client && client.phones && client.phones.length > 0) {
-      return client.phones[0].phoneNumber;
-    }
-    return '00000000';
-  }
-
-  // Dynamically calculates the rolling month intervals based on the signature date and visits count [1.1.4, 1.2.6]
-  getAllowedMonthsForVisit(contract: Contract | null, visitIndex: number): string[] {
-    const defaultMonths = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
-
-    if (!contract || !contract.dateSignature) {
-      return defaultMonths; // Fallback to all months if no date signature is loaded
-    }
-
-    // 1. Get the signature month index (0-based: 0 = Janvier, 6 = Juillet)
-    const signatureDate = new Date(contract.dateSignature);
-    const startMonthIndex = signatureDate.getMonth(); 
-
-    // 2. Get interval length (T) in months based on N.D.V count (e.g. 12 / 4 = 3 months)
-    const n = contract.numberOfVisits || 1;
-    const t = 12 / n; 
-
-    // 3. Calculate start and end offsets for this specific visit index [1.1.4]
-    const periodStartOffset = visitIndex * t;
-    const periodEndOffset = periodStartOffset + t;
-
-    // 4. Map the offsets back to their matching French calendar month strings
-    const allowedMonths: string[] = [];
-    for (let offset = periodStartOffset; offset < periodEndOffset; offset++) {
-      const actualMonthIndex = (startMonthIndex + offset) % 12;
-      allowedMonths.push(this.monthsList[actualMonthIndex]);
-    }
-
-    return allowedMonths;
-  }
-  
   saveSchedule(): void {
     if (!this.selectedContract || !this.selectedContract.id) return;
 
-    const filledMonths = this.selectedMonths.filter(m => m && m.trim() !== '');
-    const monthsString = filledMonths.join(', ');
+    // Filter out unselected inputs to support incremental scheduling
+    const filledDates = this.selectedDates.filter(d => d && d.trim() !== '');
 
-    this.contractService.updateContractSchedule(this.selectedContract.id, monthsString).subscribe({
+    this.contractService.updateContractScheduleDates(this.selectedContract.id, filledDates).subscribe({
       next: () => {
-        this.loadContracts();
+        this.loadContracts(); // Refresh
         this.notificationService.updateUnreadCount();
         
         const modalEl = document.getElementById('scheduleMonthsModal');
@@ -199,8 +155,41 @@ export class ClientViewComponent implements OnInit {
           modal?.hide();
         }
       },
-      error: (err: any) => console.error('Failed to update contract schedule', err)
+      error: (err: any) => console.error('Failed to save dates', err)
     });
+  }
+
+  // Calculate the minimum allowed date for a visit interval [1.1.4, 1.2.6]
+  getMinDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n; // Interval length in months
+
+    const minDate = new Date(signature);
+    minDate.setMonth(signature.getMonth() + (visitIndex * t));
+    return minDate.toISOString().split('T')[0];
+  }
+
+  // Calculate the maximum allowed date for a visit interval [1.1.4, 1.2.6]
+  getMaxDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n;
+
+    const maxDate = new Date(signature);
+    maxDate.setMonth(signature.getMonth() + ((visitIndex + 1) * t));
+    maxDate.setDate(maxDate.getDate() - 1); // Make inclusive
+    return maxDate.toISOString().split('T')[0];
+  }
+
+  // Safe helper to extract primary phone for routing
+  getPrimaryPhone(client: Client | undefined): string {
+    if (client && client.phones && client.phones.length > 0) {
+      return client.phones[0].phoneNumber;
+    }
+    return '00000000';
   }
 
   trackByIndex(index: number): number {

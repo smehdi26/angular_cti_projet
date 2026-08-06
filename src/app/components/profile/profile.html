@@ -47,6 +47,10 @@
             <div class="text-danger small mt-1" *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('email')">Invalid email format.</div>
           </div>
 
+          <span class="badge bg-secondary-subtle text-secondary-emphasis mt-2">
+  {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : (currentUser.role === 'ROLE_HR' ? 'Human Resources' : 'IT Technician') }}
+</span>
+
           <!-- SECURE PASSWORD RESET PANEL [1.2.6] -->
           <h6 class="fw-bold text-muted small text-uppercase mb-3 mt-4 pt-2 border-top">Change Password (Optional)</h6>
           
