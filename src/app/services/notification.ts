@@ -5,12 +5,15 @@ import { tap } from 'rxjs/operators';
 
 export interface NotificationLog {
   id?: number;
+  title?: string; // Added field
   message: string;
   createdAt: string;
   readStatus: boolean;
   type: string; // INFO, SUCCESS, DANGER, WARNING
   category: string; // Added: CLIENT, CONTRACT, RESERVATION
-
+  statusLevel?: string; // Added: SAFE, REMINDER, URGENT, OVERDUE
+  color?: string;       // Added: GREEN, YELLOW, RED
+  priority?: string;    // Added: LOW, MEDIUM, HIGH, CRITICAL
 }
 
 @Injectable({

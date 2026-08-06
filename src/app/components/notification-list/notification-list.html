@@ -74,14 +74,33 @@
               }"></i>
             </div>
             <div>
-              <p class="mb-0 fw-medium text-dark">{{ notif.message }}</p>
-              <div class="d-flex align-items-center gap-2 mt-1">
+              <!-- Display Title & Description -->
+              <h6 class="fw-bold text-dark mb-1">{{ notif.title || 'System Event' }}</h6>
+              <p class="mb-0 text-secondary small">{{ notif.message }}</p>
+              
+              <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                <!-- Timestamp -->
                 <small class="text-muted" style="font-size: 11px;">
                   <i class="bi bi-clock me-1"></i> {{ notif.createdAt.substring(0, 16).replace('T', ' ') }}
                 </small>
-                <!-- Added: Dynamic Category Label Badge [1.2.1, 1.2.6] -->
+                
+                <!-- Category Badge -->
                 <span class="badge bg-light text-secondary border fw-normal" style="font-size: 10px; letter-spacing: 0.3px;">
                   {{ notif.category }}
+                </span>
+
+                <!-- Status Level Colored Badge -->
+                <span class="badge" [ngClass]="{
+                  'bg-success-subtle text-success': notif.color === 'GREEN',
+                  'bg-warning-subtle text-warning': notif.color === 'YELLOW',
+                  'bg-danger-subtle text-danger': notif.color === 'RED'
+                }" style="font-size: 10px;">
+                  Status: {{ notif.statusLevel }}
+                </span>
+
+                <!-- Priority Badge -->
+                <span class="badge bg-dark-subtle text-dark" style="font-size: 10px;">
+                  Priority: {{ notif.priority }}
                 </span>
               </div>
             </div>
