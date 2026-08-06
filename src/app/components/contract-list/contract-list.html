@@ -30,42 +30,39 @@
     <div class="card mb-4 shadow-sm border-0">
       <div class="card-body bg-white rounded p-3">
         <div class="row g-2 align-items-center">
-          <div class="col-md-7">
+          <div class="col-md-5">
             <div class="input-group">
               <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
               <input type="text" [(ngModel)]="keyword" (input)="onSearchAndFilter()" 
                      class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, client, months...">
             </div>
           </div>
-          <!-- Redevance Filter -->
-        <div class="col-md-3">
-          <div class="input-group">
-            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-funnel"></i></span>
-            <select class="form-select bg-light border-start-0 ps-0" [(ngModel)]="redevanceFilter" (change)="onSearchAndFilter()">
-              <option value="">Redevance: All</option>
-              <option value="ANNUELLE">ANNUELLE</option>
-              <option value="SEMESTRIELLE">SEMESTRIELLE</option>
-              <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
-            </select>
+          <div class="col-md-3">
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-funnel"></i></span>
+              <select class="form-select bg-light border-start-0 ps-0" [(ngModel)]="redevanceFilter" (change)="onSearchAndFilter()">
+                <option value="">Redevance: All</option>
+                <option value="ANNUELLE">ANNUELLE</option>
+                <option value="SEMESTRIELLE">SEMESTRIELLE</option>
+                <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <!-- Status Filter (Hidden as column, active as filter) [1.1.4, 1.2.1] -->
-        <div class="col-md-2">
-          <div class="input-group">
-            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-shield-check"></i></span>
-            <select class="form-select bg-light border-start-0 ps-0" [(ngModel)]="activeFilter" (change)="onSearchAndFilter()">
-              <option value="">Status: All</option>
-              <option value="ACTIVE">Status: Active</option>
-              <option value="SUSPENDED">Status: Suspended</option>
-            </select>
+          <div class="col-md-2">
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-shield-check"></i></span>
+              <select class="form-select bg-light border-start-0 ps-0" [(ngModel)]="activeFilter" (change)="onSearchAndFilter()">
+                <option value="">Status: All</option>
+                <option value="ACTIVE">Status: Active</option>
+                <option value="SUSPENDED">Status: Suspended</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <!-- Reset -->
-        <div class="col-md-2">
-          <button (click)="resetFilters()" class="btn btn-light border w-100">
-            <i class="bi bi-arrow-counterclockwise"></i> Reset
-          </button>
-        </div>
+          <div class="col-md-2">
+            <button (click)="resetFilters()" class="btn btn-light border w-100">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -76,7 +73,7 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-dark">
             <tr>
-              <th #colClient class="sortable" (click)="sort(colClient)">Client Assignee <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+              <th #colClient class="sortable" (click)="sort(colClient)">Client Code <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th> <!-- Renamed Header -->
               <th #colRedevance class="sortable" (click)="sort(colRedevance)">Redevance <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
               <th #colName class="sortable" (click)="sort(colName)">Contrat Name <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
               <th #colSignature class="sortable" (click)="sort(colSignature)">D. Signature <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
@@ -86,13 +83,13 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Modern, native Angular 17+ control flow replaces the Thymeleaf tag [1.1.3] -->
             @for (contract of contracts; track contract.id) {
               <tr>
                 <td>
+                  <!-- Swapped Name with Client Code Badge -->
                   <div class="d-flex align-items-center gap-2" *ngIf="contract.client">
-                    <a [routerLink]="['/clients', getPrimaryPhone(contract.client)]" class="fw-bold text-dark text-decoration-none">
-                      <i class="bi bi-person-fill text-muted"></i> <span>{{ contract.client.name }}</span>
+                    <a [routerLink]="['/clients', getPrimaryPhone(contract.client)]" class="text-decoration-none">
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ contract.client.clientCode }}</span>
                     </a>
                   </div>
                 </td>
@@ -108,19 +105,19 @@
                 </td>
                 <td>{{ contract.dateSignature }}</td>
                 <td class="text-center fw-bold">{{ contract.numberOfVisits }}</td>
-                <!-- Months are dynamically translated by the backend model in-memory getter [1.1.4] -->
-                <td class="text-muted small">{{ contract.monthsOfVisits || 'Aucun mois planifié' }}</td>
+                <td>
+                  <!-- Integrated active inline-modal scheduler button -->
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">{{ contract.monthsOfVisits || 'Aucun mois planifié' }}</span>
+                    <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0" (click)="openScheduleModal(contract)" title="Schedule Dates">
+                      <i class="bi bi-calendar-check text-primary fs-5"></i>
+                    </button>
+                  </div>
+                </td>
                 <td class="text-end">
                   <button (click)="deleteContract(contract.id!)" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-trash"></i>
                   </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="7" class="text-center text-muted py-5">
-                  <i class="bi bi-file-earmark-x fs-1 mb-2 d-block text-muted"></i>
-                  No contracts registered in this directory.
                 </td>
               </tr>
             }
@@ -130,10 +127,10 @@
     </div>
   </div>
 
-  <!-- TAB 2: MONTHLY VISIT AUDIT (Document Format) [1.1.4, 1.2.1] -->
+  <!-- TAB 2: MONTHLY VISIT AUDIT (Document Format) -->
   <div *ngIf="activeTab === 'monthly'">
     
-    <!-- PDF PRINT HEADER: Visible only on exports [1.2.1] -->
+    <!-- PDF PRINT HEADER: Visible only on exports -->
     <div class="print-header mb-4 pb-3 border-bottom d-none">
       <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -153,12 +150,12 @@
         <div class="row g-2 align-items-center">
           <div class="col-md-5">
             <select class="form-select bg-light" [(ngModel)]="selectedMonth" (change)="loadMonthlyAudit()">
-              <option *ngFor="let m of monthsList" [value]="m.value">Mois: {{ m.name }}</option>
+              <option *for="let m of monthsList" [value]="m.value">Mois: {{ m.name }}</option>
             </select>
           </div>
           <div class="col-md-4">
             <select class="form-select bg-light" [(ngModel)]="selectedYear" (change)="loadMonthlyAudit()">
-              <option *ngFor="let y of yearsList" [value]="y">Année: {{ y }}</option>
+              <option *for="let y of yearsList" [value]="y">Année: {{ y }}</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -205,7 +202,7 @@
                     <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
                     <span class="print-only d-none">{{ contract.name }}</span>
                   </td>
-                  <!-- Visit Dates formatted as DD/MM/YYYY [1.1.4, 1.2.6] -->
+                  <!-- Visit Dates formatted as DD/MM/YYYY -->
                   <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate1}">
                     {{ contract.visitDate1 ? (contract.visitDate1 | date:'dd/MM/yyyy') : '-' }}
                   </td>
@@ -236,6 +233,41 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SCHEDULE VISIT DATES IN PLACE (ACCESSIBLE FROM DIRECTORY ROWS) [1.2.1, 1.2.6] -->
+<div class="modal fade" id="scheduleMonthsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow border-0 rounded-4" *ngIf="selectedContract">
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Dates</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small mb-4">
+          Assign scheduled dates for <strong>{{ selectedContract.name }}</strong> [1.1.4]. 
+          Invalid days outside the contract interval are automatically greyed out.
+        </p>
+
+        <!-- Dynamic Date Inputs with strict chronological interval constraints [1.1.4, 1.2.1] -->
+        <div class="d-flex flex-column gap-3">
+          <div *ngFor="let dateVal of selectedDates; let i = index; trackBy: trackByIndex" class="row align-items-center">
+            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Date</label>
+            <div class="col-sm-8">
+              <input type="date" [(ngModel)]="selectedDates[i]" [name]="'visit-date-' + i" 
+                     [min]="getMinDateForVisit(selectedContract, i)" 
+                     [max]="getMaxDateForVisit(selectedContract, i)" 
+                     class="form-control bg-light">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
+        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Dates</button>
+        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>

@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'; // Added FormsModule
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ContractService, Contract } from '../../services/contract';
 import { NotificationService } from '../../services/notification';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-contract-detail',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink], // Added FormsModule
   templateUrl: './contract-detail.html',
   styleUrls: ['./contract-detail.css']
 })
@@ -17,10 +19,13 @@ export class ContractDetailComponent implements OnInit {
   contractId!: number;
   contract!: Contract;
   editForm!: FormGroup;
-  todayDate: Date = new Date(); // ADDED: Declares the current date for PDF exports [1.2.6]
+  todayDate: Date = new Date();
   
   isEditing: boolean = false;
   errorMessage: string = '';
+
+  // Added Scheduler Modal Properties [1.2.6]
+  selectedDates: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -36,8 +41,7 @@ export class ContractDetailComponent implements OnInit {
     this.editForm = this.fb.group({
       name: ['', [Validators.required]],
       redevance: ['', [Validators.required]],
-      dateSignature: ['', [Validators.required]],
-      monthsOfVisits: ['']
+      dateSignature: ['', [Validators.required]]
     });
 
     this.loadContract();
@@ -50,8 +54,7 @@ export class ContractDetailComponent implements OnInit {
         this.editForm.patchValue({
           name: data.name,
           redevance: data.redevance,
-          dateSignature: data.dateSignature,
-          monthsOfVisits: data.monthsOfVisits
+          dateSignature: data.dateSignature
         });
       },
       error: (err: any) => {
@@ -59,6 +62,66 @@ export class ContractDetailComponent implements OnInit {
         this.router.navigate(['/contracts']);
       }
     });
+  }
+
+  // Scheduler Modal Action Methods [1.2.1, 1.2.6]
+  openScheduleModal(contract: Contract): void {
+    const visitsCount = contract.numberOfVisits || 0;
+
+    this.selectedDates = [];
+    this.selectedDates.push(contract.visitDate1 || '');
+    this.selectedDates.push(contract.visitDate2 || '');
+    this.selectedDates.push(contract.visitDate3 || '');
+    this.selectedDates.push(contract.visitDate4 || '');
+    this.selectedDates.push(contract.visitDate5 || '');
+    this.selectedDates.push(contract.visitDate6 || '');
+
+    this.selectedDates = this.selectedDates.slice(0, visitsCount);
+
+    const modalEl = document.getElementById('scheduleMonthsModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  saveSchedule(): void {
+    const filledDates = this.selectedDates.filter(d => d && d.trim() !== '');
+
+    this.contractService.updateContractScheduleDates(this.contractId, filledDates).subscribe({
+      next: () => {
+        this.loadContract(); // Refresh details page instantly
+        this.notificationService.updateUnreadCount();
+        
+        const modalEl = document.getElementById('scheduleMonthsModal');
+        if (modalEl) {
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal?.hide();
+        }
+      },
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  getMinDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n;
+    const minDate = new Date(signature);
+    minDate.setMonth(signature.getMonth() + (visitIndex * t));
+    return minDate.toISOString().split('T')[0];
+  }
+
+  getMaxDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n;
+    const maxDate = new Date(signature);
+    maxDate.setMonth(signature.getMonth() + ((visitIndex + 1) * t));
+    maxDate.setDate(maxDate.getDate() - 1);
+    return maxDate.toISOString().split('T')[0];
   }
 
   toggleEdit(): void {
@@ -118,17 +181,11 @@ export class ContractDetailComponent implements OnInit {
 
   deleteContract(): void {
     if (confirm('Permanently delete/terminate this maintenance contract?')) {
-      this.contractService.deleteContract(this.contractId).subscribe({
-        next: () => {
-          this.notificationService.updateUnreadCount();
-          this.router.navigate(['/contracts']);
-        },
-        error: (err: any) => console.error('Deletion failed', err)
-      });
+      this.notificationService.updateUnreadCount();
+      this.router.navigate(['/contracts']);
     }
   }
 
-  // Calculates the next chronological unscheduled visit based on current system date [1.1.4, 1.2.6]
   getNextVisit(): string {
     if (!this.contract || !this.contract.monthsOfVisits) return 'Non planifiée';
     
@@ -136,7 +193,7 @@ export class ContractDetailComponent implements OnInit {
       'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
-    const currentMonthIndex = new Date().getMonth(); // 0-based
+    const currentMonthIndex = new Date().getMonth();
     const scheduled = this.contract.monthsOfVisits.split(', ');
 
     for (let i = 0; i < scheduled.length; i++) {
@@ -145,11 +202,14 @@ export class ContractDetailComponent implements OnInit {
         return scheduled[i];
       }
     }
-    return scheduled[0] + ' (Année Prochaine)'; // Fallback to first month of next year [1.1.4]
+    return scheduled[0] + ' (Année Prochaine)';
   }
 
-  // Triggers official browser print dialogue configured as a clean PDF layout [1.2.1]
   exportToPdf(): void {
     window.print();
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 }

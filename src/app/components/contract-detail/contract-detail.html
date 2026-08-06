@@ -9,7 +9,6 @@
   <div class="row justify-content-center">
     <!-- Main Content Area -->
     <div class="col-lg-8">
-      
       <!-- PRINT HEADER: Hidden on screen, visible only on PDF/print export [1.2.1] -->
       <div class="print-header mb-5 pb-3 border-bottom d-none">
         <div class="d-flex justify-content-between align-items-center">
@@ -36,7 +35,6 @@
               <p class="text-muted mb-0 small">Contract Details Card</p>
             </div>
           </div>
-          
           <div class="no-print">
             <span class="badge" [ngClass]="contract.status === 'ACTIVE' ? 'bg-success text-white' : 'bg-danger text-white'">
               {{ contract.status === 'ACTIVE' ? 'Actif' : 'Suspendu' }}
@@ -79,7 +77,15 @@
             </tr>
             <tr>
               <th class="text-muted small fw-semibold">Les mois des visites</th>
-              <td class="small text-muted">{{ contract.monthsOfVisits || 'Aucun mois configuré' }}</td>
+              <td>
+                <!-- Integrated active inline-modal scheduler button [1.1.4, 1.2.1] -->
+                <div class="d-flex align-items-center gap-2">
+                  <span class="small text-muted">{{ contract.monthsOfVisits || 'Aucun mois configuré' }}</span>
+                  <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0 no-print" (click)="openScheduleModal(contract)" title="Schedule Dates">
+                    <i class="bi bi-calendar-check text-primary fs-5"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
           </table>
         </div>
@@ -89,20 +95,16 @@
           <button (click)="toggleEdit()" class="btn btn-warning flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2">
             <i class="bi bi-pencil-square"></i> Modifier
           </button>
-          
           <button (click)="toggleStatus()" class="btn flex-grow-1 py-2" [ngClass]="contract.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'">
             <i class="bi" [ngClass]="contract.status === 'ACTIVE' ? 'bi-pause-fill' : 'bi-play-fill'"></i>
             {{ contract.status === 'ACTIVE' ? 'Suspendre' : 'Activer' }}
           </button>
-          
           <button (click)="renewContract()" class="btn btn-outline-success flex-grow-1 py-2">
             <i class="bi bi-arrow-repeat"></i> Renouveler Contrat
           </button>
-          
           <button (click)="exportToPdf()" class="btn btn-outline-dark flex-grow-1 py-2">
             <i class="bi bi-file-pdf"></i> Exporter PDF
           </button>
-          
           <button (click)="deleteContract()" class="btn btn-danger px-4 py-2">
             <i class="bi bi-trash"></i> Supprimer
           </button>
@@ -126,7 +128,6 @@
             <label class="form-label text-muted small fw-medium">Contract Name</label>
             <input type="text" formControlName="name" class="form-control bg-light">
           </div>
-
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Redevance</label>
             <select formControlName="redevance" class="form-select bg-light">
@@ -135,12 +136,10 @@
               <option value="TRIMESTRIELLE">TRIMESTRIELLE</option>
             </select>
           </div>
-
           <div class="mb-3">
             <label class="form-label text-muted small fw-medium">Signature Date</label>
             <input type="date" formControlName="dateSignature" class="form-control bg-light">
           </div>
-
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-warning flex-grow-1 py-2">Save Changes</button>
             <button type="button" (click)="toggleEdit()" class="btn btn-light border py-2 px-4">Cancel</button>
@@ -152,7 +151,6 @@
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white mt-4" *ngIf="!isEditing && contract.history && contract.history.length > 0">
         <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Historique des renouvellements</h5>
         <p class="text-muted small mb-4">Past yearly contract schedules archived automatically upon renewal.</p>
-
         <div class="table-responsive">
           <table class="table table-striped align-middle mb-0">
             <thead class="table-light">
@@ -174,7 +172,36 @@
           </table>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
+<!-- MODAL: SCHEDULE VISIT DATES IN PLACE (ACCESSIBLE FROM DETAIL SHEET) [1.2.1, 1.2.6] -->
+<div class="modal fade" id="scheduleMonthsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow border-0 rounded-4" *ngIf="contract">
+      <div class="modal-header bg-dark text-white border-0 py-3">
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check me-2"></i> Schedule Visit Dates</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted small mb-4">
+          Assign scheduled dates for <strong>{{ contract.name }}</strong> [1.1.4]. Invalid days outside the contract interval are automatically greyed out.
+        </p>
+        <!-- Dynamic Date Inputs with strict chronological interval constraints [1.1.4, 1.2.1] -->
+        <div class="d-flex flex-column gap-3">
+          <div *ngFor="let dateVal of selectedDates; let i = index; trackBy: trackByIndex" class="row align-items-center">
+            <label class="col-sm-4 form-label text-muted small fw-medium mb-0">Visit #{{ i + 1 }} Date</label>
+            <div class="col-sm-8">
+              <input type="date" [(ngModel)]="selectedDates[i]" [name]="'visit-date-' + i" [min]="getMinDateForVisit(contract, i)" [max]="getMaxDateForVisit(contract, i)" class="form-control bg-light">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
+        <button type="button" (click)="saveSchedule()" class="btn btn-primary rounded-3 flex-grow-1">Save Scheduled Dates</button>
+        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
+      </div>
     </div>
   </div>
 </div>

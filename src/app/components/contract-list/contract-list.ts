@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,6 +7,8 @@ import { SectorService } from '../../services/sector';
 import { Sector } from '../../services/client';
 import { NotificationService } from '../../services/notification';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-contract-list',
   standalone: true,
@@ -14,21 +16,19 @@ import { NotificationService } from '../../services/notification';
   templateUrl: './contract-list.html',
   styleUrls: ['./contract-list.css']
 })
-export class ContractListComponent implements OnInit {
+export class ContractListComponent implements OnInit, AfterViewInit {
 
   contracts: Contract[] = [];
   sectors: Sector[] = [];
-  
-  // Tab control
-  activeTab: string = 'directory'; // 'directory' | 'monthly'
+  activeTab: string = 'directory';
 
   // General Filter Properties
   keyword: string = '';
   redevanceFilter: string = '';
-  activeFilter: string = ''; // Status state filter [1.2.6]
+  activeFilter: string = '';
 
-  // Monthly Audit Properties [1.1.4]
-  selectedMonth: number = new Date().getMonth() + 1; // 1-based (1-12)
+  // Monthly Audit Properties
+  selectedMonth: number = new Date().getMonth() + 1;
   selectedYear: number = new Date().getFullYear();
   monthlyContracts: Contract[] = [];
   todayDate: Date = new Date();
@@ -44,6 +44,10 @@ export class ContractListComponent implements OnInit {
 
   yearsList = [2026, 2027, 2028, 2029, 2030];
 
+  // Added Scheduler Modal Properties [1.2.6]
+  selectedContract: Contract | null = null;
+  selectedDates: string[] = [];
+
   constructor(
     private contractService: ContractService,
     private sectorService: SectorService,
@@ -56,31 +60,28 @@ export class ContractListComponent implements OnInit {
     this.loadMonthlyAudit();
   }
 
+  ngAfterViewInit(): void {
+    // Optional calendar setup if active tab is changed, handled dynamically
+  }
+
   loadContracts(): void {
     this.contractService.getContracts(this.keyword, this.redevanceFilter, this.activeFilter).subscribe({
-      next: (data: Contract[]) => {
-        this.contracts = data;
-      },
-      error: (err: any) => console.error('Failed to load contracts directory', err)
+      next: (data: Contract[]) => this.contracts = data,
+      error: (err: any) => console.error(err)
     });
   }
 
   loadSectors(): void {
     this.sectorService.getActiveSectors().subscribe({
-      next: (data: Sector[]) => {
-        this.sectors = data;
-      },
-      error: (err: any) => console.error('Failed to load sectors', err)
+      next: (data: Sector[]) => this.sectors = data,
+      error: (err: any) => console.error(err)
     });
   }
 
-  // Queries Spring Boot for active visits scheduled for the chosen month [1.1.4, 1.2.6]
   loadMonthlyAudit(): void {
     this.contractService.getMonthlySchedules(this.selectedMonth, this.selectedYear).subscribe({
-      next: (data: Contract[]) => {
-        this.monthlyContracts = data;
-      },
-      error: (err: any) => console.error('Failed to load monthly audit', err)
+      next: (data: Contract[]) => this.monthlyContracts = data,
+      error: (err: any) => console.error(err)
     });
   }
 
@@ -103,13 +104,77 @@ export class ContractListComponent implements OnInit {
           this.loadMonthlyAudit();
           this.notificationService.updateUnreadCount();
         },
-        error: (err: any) => console.error('Failed to delete contract', err)
+        error: (err: any) => console.error(err)
       });
     }
   }
 
+  // Scheduler Modal Action Methods [1.2.1, 1.2.6]
+  openScheduleModal(contract: Contract): void {
+    this.selectedContract = contract;
+    const visitsCount = contract.numberOfVisits || 0;
+
+    this.selectedDates = [];
+    this.selectedDates.push(contract.visitDate1 || '');
+    this.selectedDates.push(contract.visitDate2 || '');
+    this.selectedDates.push(contract.visitDate3 || '');
+    this.selectedDates.push(contract.visitDate4 || '');
+    this.selectedDates.push(contract.visitDate5 || '');
+    this.selectedDates.push(contract.visitDate6 || '');
+
+    this.selectedDates = this.selectedDates.slice(0, visitsCount);
+
+    const modalEl = document.getElementById('scheduleMonthsModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  saveSchedule(): void {
+    if (!this.selectedContract || !this.selectedContract.id) return;
+
+    const filledDates = this.selectedDates.filter(d => d && d.trim() !== '');
+
+    this.contractService.updateContractScheduleDates(this.selectedContract.id, filledDates).subscribe({
+      next: () => {
+        this.loadContracts();
+        this.loadMonthlyAudit();
+        this.notificationService.updateUnreadCount();
+        
+        const modalEl = document.getElementById('scheduleMonthsModal');
+        if (modalEl) {
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal?.hide();
+        }
+      },
+      error: (err: any) => console.error(err)
+    });
+  }
+
+  getMinDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n;
+    const minDate = new Date(signature);
+    minDate.setMonth(signature.getMonth() + (visitIndex * t));
+    return minDate.toISOString().split('T')[0];
+  }
+
+  getMaxDateForVisit(contract: Contract, visitIndex: number): string {
+    if (!contract.dateSignature) return '';
+    const signature = new Date(contract.dateSignature);
+    const n = contract.numberOfVisits || 1;
+    const t = 12 / n;
+    const maxDate = new Date(signature);
+    maxDate.setMonth(signature.getMonth() + ((visitIndex + 1) * t));
+    maxDate.setDate(maxDate.getDate() - 1);
+    return maxDate.toISOString().split('T')[0];
+  }
+
   exportMonthlyPdf(): void {
-    window.print(); // Triggers PDF print style sheet [1.2.1]
+    window.print();
   }
 
   getPrimaryPhone(client: any): string {
@@ -119,7 +184,10 @@ export class ContractListComponent implements OnInit {
     return '00000000';
   }
 
-  // Client-side column sorter [1.1.4]
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   sort(headerEl: HTMLTableCellElement): void {
     const table = headerEl.closest('table');
     if (!table) return;
