@@ -25,6 +25,7 @@ export class ContractListComponent implements OnInit {
   // General Filter Properties
   keyword: string = '';
   redevanceFilter: string = '';
+  activeFilter: string = ''; // Status state filter [1.2.6]
 
   // Monthly Audit Properties [1.1.4]
   selectedMonth: number = new Date().getMonth() + 1; // 1-based (1-12)
@@ -56,28 +57,41 @@ export class ContractListComponent implements OnInit {
   }
 
   loadContracts(): void {
-    this.contractService.getContracts(this.keyword, this.redevanceFilter).subscribe({
-      next: (data: Contract[]) => this.contracts = data,
-      error: (err: any) => console.error(err)
+    this.contractService.getContracts(this.keyword, this.redevanceFilter, this.activeFilter).subscribe({
+      next: (data: Contract[]) => {
+        this.contracts = data;
+      },
+      error: (err: any) => console.error('Failed to load contracts directory', err)
     });
   }
 
   loadSectors(): void {
     this.sectorService.getActiveSectors().subscribe({
-      next: (data: Sector[]) => this.sectors = data,
-      error: (err: any) => console.error(err)
+      next: (data: Sector[]) => {
+        this.sectors = data;
+      },
+      error: (err: any) => console.error('Failed to load sectors', err)
     });
   }
 
   // Queries Spring Boot for active visits scheduled for the chosen month [1.1.4, 1.2.6]
   loadMonthlyAudit(): void {
     this.contractService.getMonthlySchedules(this.selectedMonth, this.selectedYear).subscribe({
-      next: (data: Contract[]) => this.monthlyContracts = data,
-      error: (err: any) => console.error(err)
+      next: (data: Contract[]) => {
+        this.monthlyContracts = data;
+      },
+      error: (err: any) => console.error('Failed to load monthly audit', err)
     });
   }
 
   onSearchAndFilter(): void {
+    this.loadContracts();
+  }
+
+  resetFilters(): void {
+    this.keyword = '';
+    this.redevanceFilter = '';
+    this.activeFilter = '';
     this.loadContracts();
   }
 
@@ -89,7 +103,7 @@ export class ContractListComponent implements OnInit {
           this.loadMonthlyAudit();
           this.notificationService.updateUnreadCount();
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => console.error('Failed to delete contract', err)
       });
     }
   }
@@ -105,7 +119,7 @@ export class ContractListComponent implements OnInit {
     return '00000000';
   }
 
-  // Client-side sorter [1.1.4]
+  // Client-side column sorter [1.1.4]
   sort(headerEl: HTMLTableCellElement): void {
     const table = headerEl.closest('table');
     if (!table) return;

@@ -1,5 +1,5 @@
 <div class="container py-5" *ngIf="contract">
-  <!-- Back Navigation Link -->
+  <!-- Back Navigation Link (Hidden on PDF Export) -->
   <div class="mb-4 no-print">
     <a [routerLink]="['/contracts']" class="text-decoration-none text-secondary d-inline-flex align-items-center gap-2">
       <i class="bi bi-arrow-left"></i> Back to Contracts Directory
@@ -7,6 +7,7 @@
   </div>
 
   <div class="row justify-content-center">
+    <!-- Main Content Area -->
     <div class="col-lg-8">
       
       <!-- PRINT HEADER: Hidden on screen, visible only on PDF/print export [1.2.1] -->
@@ -23,7 +24,7 @@
         </div>
       </div>
 
-      <!-- READ ONLY VIEW -->
+      <!-- READ-ONLY DETAILS VIEW -->
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="!isEditing">
         <div class="d-flex justify-content-between align-items-start mb-4 pb-2 border-bottom">
           <div class="d-flex align-items-center gap-3">
@@ -52,10 +53,11 @@
             <tr>
               <th class="text-muted small fw-semibold">Entreprise (Client)</th>
               <td>
+                <!-- Hidden on PDF export to avoid raw hyperlink styles -->
                 <a [routerLink]="['/clients', contract.client ? contract.client.phones?.[0]?.phoneNumber : '00000000']" class="text-decoration-none fw-bold no-print">
                   {{ contract.client?.name }}
                 </a>
-                <span class="print-only d-none">{{ contract.client?.name }}</span>
+                <span class="print-only d-none fw-bold text-dark">{{ contract.client?.name }}</span>
               </td>
             </tr>
             <tr>
@@ -71,6 +73,7 @@
               <td class="small fw-bold text-dark">{{ contract.numberOfVisits }} visites par an</td>
             </tr>
             <tr>
+              <!-- Dynamically calculated next upcoming visit [1.1.4, 1.2.6] -->
               <th class="text-muted small fw-semibold text-primary">Prochaine visite</th>
               <td class="small fw-bold text-primary"><i class="bi bi-calendar-check-fill me-1"></i> {{ getNextVisit() }}</td>
             </tr>
@@ -106,7 +109,7 @@
         </div>
       </div>
 
-      <!-- EDIT VIEW -->
+      <!-- EDIT VIEW (IN-PLACE REPLACEMENT) [1.2.6] -->
       <div class="card p-4 p-md-5 border-0 shadow-sm bg-white" *ngIf="isEditing">
         <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
           <div class="bg-warning text-dark p-2 rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
@@ -138,16 +141,38 @@
             <input type="date" formControlName="dateSignature" class="form-control bg-light">
           </div>
 
-          <div class="mb-4">
-            <label class="form-label text-muted small fw-medium">Months of Visits</label>
-            <input type="text" formControlName="monthsOfVisits" class="form-control bg-light">
-          </div>
-
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-warning flex-grow-1 py-2">Save Changes</button>
             <button type="button" (click)="toggleEdit()" class="btn btn-light border py-2 px-4">Cancel</button>
           </div>
         </form>
+      </div>
+
+      <!-- TAB/SECTION: CONTRACT RENEWAL HISTORY LOG [1.2.1, 1.2.6] -->
+      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white mt-4" *ngIf="!isEditing && contract.history && contract.history.length > 0">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Historique des renouvellements</h5>
+        <p class="text-muted small mb-4">Past yearly contract schedules archived automatically upon renewal.</p>
+
+        <div class="table-responsive">
+          <table class="table table-striped align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Année</th>
+                <th>Redevance</th>
+                <th>Dates des visites effectuées</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of contract.history">
+                <td class="fw-bold text-dark">{{ h.year }}</td>
+                <td>
+                  <span class="badge bg-light text-secondary border">{{ h.redevance }}</span>
+                </td>
+                <td class="text-muted small">{{ h.visitDates }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
