@@ -1,6 +1,6 @@
-<div class="container-fluid py-4">
+<div class="container-fluid py-4" *ngIf="reservations">
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold text-dark mb-1">Reservations Directory</h3>
       <p class="text-muted mb-0">Unified dashboard displaying scheduled times, client assignments, and statuses</p>
@@ -36,7 +36,7 @@
             <div class="input-group">
               <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
               <input type="text" [(ngModel)]="keyword" (input)="onSearchAndFilter()" 
-                     class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, date, time, notes...">
+                     class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, notes...">
             </div>
           </div>
           <div class="col-md-3">
@@ -67,25 +67,35 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
               <tr>
-                <th class="sortable" data-sort-dir="asc">Reservation Title <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th> <!-- Added Column -->
-                <th class="sortable" data-sort-dir="asc">Client Assignee <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" data-sort-dir="asc">Scheduled Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" data-sort-dir="asc">Time Interval <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colTitle)" #colTitle>Reservation Title <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th> <!-- Added Column -->
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colClient)" #colClient>Client Assignee <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colTech)" #colTech>Assigned Tech <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th> <!-- Added Column [1.1.3] -->
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colDate)" #colDate>Scheduled Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colTime)" #colTime>Time Interval <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
                 <th>Description</th>
-                <th class="sortable" data-sort-dir="asc">Current State <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="text-end" style="width: 140px;">Actions</th>
+                <th class="sortable" data-sort-dir="asc" (click)="sort(colState)" #colState>Current State <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="text-end" style="width: 180px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (res of reservations; track res.id) {
                 <tr>
-                  <td class="fw-bold text-dark">{{ res.name }}</td> <!-- Display Title -->
+                  <!-- Display Reservation Title -->
+                  <td class="fw-bold text-dark">{{ res.name }}</td>
                   <td>
                     <div class="d-flex align-items-center gap-2" *ngIf="res.client">
                       <a [routerLink]="['/clients', getPrimaryPhone(res.client)]" class="fw-bold text-dark text-decoration-none">
                         <i class="bi bi-person-fill text-muted"></i> <span>{{ res.client.name }}</span>
                       </a>
                     </div>
+                  </td>
+                  <!-- Display Assigned IT Technician -->
+                  <td>
+                    <span *ngIf="res.technician" class="badge bg-light text-dark border d-inline-flex align-items-center gap-1">
+                      <i class="bi bi-tools text-primary" style="font-size: 10px;"></i>
+                      <span>{{ res.technician.firstName }} {{ res.technician.lastName }}</span>
+                    </span>
+                    <span *ngIf="!res.technician" class="text-muted small">-</span>
                   </td>
                   <td>{{ res.reservationTime.substring(0, 10) }}</td>
                   <td>{{ res.reservationTime.substring(11, 16) }}</td>
@@ -101,23 +111,29 @@
                       Reason: {{ res.cancellationReason }}
                     </small>
                   </td>
+                  <!-- Actions Column with status picker, reschedule, and delete [1.1.3, 1.2.6] -->
                   <td class="text-end">
-                    <div class="d-flex flex-column gap-2 align-items-end" *ngIf="res.client">
-                      <select #statusSelect (change)="submitStatusForm(res, statusSelect)" class="form-select form-select-sm">
+                    <div class="d-flex flex-row gap-1 justify-content-end align-items-center" *ngIf="res.client">
+                      <select #statusSelect (change)="submitStatusForm(res, statusSelect)" class="form-select form-select-sm" style="width: auto;">
                         <option value="UNTREATED" [selected]="res.status === 'UNTREATED'">Untreated</option>
                         <option value="IN_PROGRESS" [selected]="res.status === 'IN_PROGRESS'">In Progress</option>
                         <option value="DONE" [selected]="res.status === 'DONE'">Done</option>
                         <option value="CANCELLED" [selected]="res.status === 'CANCELLED'">Cancelled</option>
                       </select>
-                      <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: res.client.id, description: res.description }" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 11px;">
-                        <i class="bi bi-arrow-repeat"></i> Reschedule
+                      <!-- Reschedule button -->
+                      <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: res.client.id, description: res.description }" class="btn btn-sm btn-outline-secondary px-2" title="Reschedule">
+                        <i class="bi bi-arrow-repeat"></i>
                       </a>
+                      <!-- Delete button [1.1.3] -->
+                      <button (click)="deleteReservation(res.id!)" class="btn btn-sm btn-outline-danger px-2" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-5">
+                  <td colspan="8" class="text-center text-muted py-5">
                     <i class="bi bi-calendar-x fs-1 mb-2 d-block text-muted"></i>No matching records found.
                   </td>
                 </tr>
@@ -143,9 +159,15 @@
             @for (res of reservations; track res.id) {
               @if (res.status === 'UNTREATED') {
                 <div class="card p-3 bg-white border shadow-sm">
-                  <h6 class="fw-bold mb-1 text-dark">{{ res.client?.name }}</h6>
+                  <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
+                  <div class="small text-muted mb-1" *ngIf="res.client">
+                    <i class="bi bi-person-fill text-muted"></i> <span>{{ res.client.name }}</span>
+                  </div>
+                  <div class="small text-muted mb-2" *ngIf="res.technician">
+                    <i class="bi bi-tools text-primary" style="font-size: 11px;"></i> <span>{{ res.technician.firstName }} {{ res.technician.lastName }}</span>
+                  </div>
                   <div class="small text-muted mb-2">
-                    <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16) }}</span>
+                    <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16).replace('T', ' ') }}</span>
                   </div>
                   <p class="small text-secondary mb-3 text-truncate">{{ res.description || 'No notes.' }}</p>
                   <div class="d-flex justify-content-between" *ngIf="res.client">
@@ -170,9 +192,15 @@
               @for (res of reservations; track res.id) {
                 @if (res.status === 'IN_PROGRESS') {
                   <div class="card p-3 bg-white border shadow-sm">
-                    <h6 class="fw-bold mb-1 text-dark">{{ res.client?.name }}</h6>
+                    <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
+                    <div class="small text-muted mb-1" *ngIf="res.client">
+                      <i class="bi bi-person-fill text-muted"></i> <span>{{ res.client.name }}</span>
+                    </div>
+                    <div class="small text-muted mb-2" *ngIf="res.technician">
+                      <i class="bi bi-tools text-primary" style="font-size: 11px;"></i> <span>{{ res.technician.firstName }} {{ res.technician.lastName }}</span>
+                    </div>
                     <div class="small text-muted mb-2">
-                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16) }}</span>
+                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16).replace('T', ' ') }}</span>
                     </div>
                     <p class="small text-secondary mb-3 text-truncate">{{ res.description || 'No notes.' }}</p>
                     <div class="d-flex justify-content-between" *ngIf="res.client">
@@ -197,9 +225,15 @@
               @for (res of reservations; track res.id) {
                 @if (res.status === 'DONE') {
                   <div class="card p-3 bg-white border shadow-sm">
-                    <h6 class="fw-bold mb-1 text-dark">{{ res.client?.name }}</h6>
+                    <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
+                    <div class="small text-muted mb-1" *ngIf="res.client">
+                      <i class="bi bi-person-fill text-muted"></i> <span>{{ res.client.name }}</span>
+                    </div>
+                    <div class="small text-muted mb-2" *ngIf="res.technician">
+                      <i class="bi bi-tools text-primary" style="font-size: 11px;"></i> <span>{{ res.technician.firstName }} {{ res.technician.lastName }}</span>
+                    </div>
                     <div class="small text-muted mb-2">
-                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16) }}</span>
+                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16).replace('T', ' ') }}</span>
                     </div>
                     <p class="small text-secondary mb-3 text-truncate">{{ res.description || 'No notes.' }}</p>
                     <div class="d-flex justify-content-between" *ngIf="res.client">
@@ -224,9 +258,15 @@
               @for (res of reservations; track res.id) {
                 @if (res.status === 'CANCELLED') {
                   <div class="card p-3 bg-white border shadow-sm" style="opacity: 0.85;">
-                    <h6 class="fw-bold mb-1 text-dark">{{ res.client?.name }}</h6>
+                    <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
+                    <div class="small text-muted mb-1" *ngIf="res.client">
+                      <i class="bi bi-person-fill text-muted"></i> <span>{{ res.client.name }}</span>
+                    </div>
+                    <div class="small text-muted mb-2" *ngIf="res.technician">
+                      <i class="bi bi-tools text-primary" style="font-size: 11px;"></i> <span>{{ res.technician.firstName }} {{ res.technician.lastName }}</span>
+                    </div>
                     <div class="small text-muted mb-1">
-                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16) }}</span>
+                      <i class="bi bi-calendar3 text-primary"></i> <span>{{ res.reservationTime.substring(0, 16).replace('T', ' ') }}</span>
                     </div>
                     <div *ngIf="res.cancellationReason" class="small text-danger mb-2">
                       <i class="bi bi-exclamation-triangle"></i> <span>Reason: {{ res.cancellationReason }}</span>
@@ -279,6 +319,11 @@
           <tr>
             <th class="text-muted small fw-semibold">Contact Line</th>
             <td class="small fw-medium text-dark">{{ selectedRes.clientPhone }}</td>
+          </tr>
+          <!-- Display Assigned IT Technician inside details modal -->
+          <tr>
+            <th class="text-muted small fw-semibold">Assigned Tech</th>
+            <td class="small fw-medium text-dark">{{ selectedRes.technicianName || '-' }}</td>
           </tr>
           <tr>
             <th class="text-muted small fw-semibold">Description Notes</th>

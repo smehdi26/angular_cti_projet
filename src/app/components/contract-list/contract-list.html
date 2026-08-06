@@ -144,18 +144,24 @@
       </div>
     </div>
 
-    <!-- Month & Year Selector -->
+    <!-- Month & Year Selector (Corrected with native @for syntax) [1.1.3] -->
     <div class="card mb-4 shadow-sm border-0 no-print">
       <div class="card-body bg-white rounded p-3">
         <div class="row g-2 align-items-center">
           <div class="col-md-5">
             <select class="form-select bg-light" [(ngModel)]="selectedMonth" (change)="loadMonthlyAudit()">
-              <option *for="let m of monthsList" [value]="m.value">Mois: {{ m.name }}</option>
+              <!-- Fixed: Uses native @for control flow [1.1.3] -->
+              @for (m of monthsList; track m.value) {
+                <option [value]="m.value">Mois: {{ m.name }}</option>
+              }
             </select>
           </div>
           <div class="col-md-4">
             <select class="form-select bg-light" [(ngModel)]="selectedYear" (change)="loadMonthlyAudit()">
-              <option *for="let y of yearsList" [value]="y">Année: {{ y }}</option>
+              <!-- Fixed: Uses native @for control flow [1.1.3] -->
+              @for (y of yearsList; track y) {
+                <option [value]="y">Année: {{ y }}</option>
+              }
             </select>
           </div>
           <div class="col-md-3">

@@ -103,6 +103,7 @@
             <thead class="table-light">
               <tr>
                 <th>Reservation Title</th>
+                <th>Assigned Tech</th> <!-- Added Header Column -->
                 <th>Scheduled Date</th>
                 <th>Time</th>
                 <th>Description</th>
@@ -112,8 +113,15 @@
             </thead>
             <tbody>
               @for (res of reservations; track res.id) {
-                <tr>
+                 <tr>
                   <td class="fw-bold text-dark">{{ res.name }}</td>
+                  <!-- Display Tech -->
+                  <td>
+                    <span *ngIf="res.technician" class="badge bg-light text-dark border">
+                      <i class="bi bi-tools text-primary small"></i> {{ res.technician.firstName }} {{ res.technician.lastName }}
+                    </span>
+                    <span *ngIf="!res.technician" class="text-muted small">-</span>
+                  </td>
                   <td>{{ res.reservationTime.substring(0, 10) }}</td>
                   <td>{{ res.reservationTime.substring(11, 16) }}</td>
                   <td class="text-muted small">{{ res.description || '-' }}</td>
@@ -136,9 +144,13 @@
                         <option value="DONE" [selected]="res.status === 'DONE'">Done</option>
                         <option value="CANCELLED" [selected]="res.status === 'CANCELLED'">Cancelled</option>
                       </select>
-                      <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: client.id, description: res.description }" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 11px;">
-                        <i class="bi bi-arrow-repeat"></i> Reschedule
+                      <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: client.id, description: res.description }" class="btn btn-sm btn-outline-secondary px-2" title="Reschedule">
+                        <i class="bi bi-arrow-repeat"></i>
                       </a>
+                      <!-- Add Delete Button -->
+                      <button (click)="deleteReservation(res.id!)" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>

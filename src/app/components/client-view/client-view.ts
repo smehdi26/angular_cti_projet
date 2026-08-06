@@ -195,4 +195,16 @@ export class ClientViewComponent implements OnInit {
   trackByIndex(index: number): number {
     return index;
   }
+
+  deleteReservation(id: number): void {
+    if (confirm('Permanently delete this meeting/reservation?')) {
+      this.reservationService.deleteReservation(id).subscribe({
+        next: () => {
+          this.loadReservations(); // Refresh profile meeting history instantly
+          this.notificationService.updateUnreadCount();
+        },
+        error: (err: any) => console.error(err)
+      });
+    }
+  }
 }

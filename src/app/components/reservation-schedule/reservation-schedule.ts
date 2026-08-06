@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReservationService, TimeSlot, BookingRequest } from '../../services/reservation';
 import { ClientService, Client } from '../../services/client';
+import { UserManagementService, SystemUser } from '../../services/user-management';
 import { NotificationService } from '../../services/notification';
 
 @Component({
@@ -19,40 +20,40 @@ export class ReservationScheduleComponent implements OnInit {
   selectedDate: string = '';
   slots: TimeSlot[] = [];
   clients: Client[] = [];
+  technicians: SystemUser[] = [];
   errorMessage: string = '';
 
   constructor(
     private fb: FormBuilder,
     private reservationService: ReservationService,
     private clientService: ClientService,
+    private userService: UserManagementService,
+    private notificationService: NotificationService,
     private route: ActivatedRoute,
-    private router: Router,
-    private notificationService: NotificationService // Add this
-
+    private router: Router
   ) { }
 
   ngOnInit(): void {
-    // 1. Initialize selected date to today's date (format: YYYY-MM-DD)
     const today = new Date();
     this.selectedDate = today.toISOString().split('T')[0];
 
-    // 2. Read optional query parameters (pre-selected clients or date from deep-links)
     const qParams = this.route.snapshot.queryParams;
     if (qParams['date']) {
       this.selectedDate = qParams['date'];
     }
 
-    // 3. Initialize the booking form
     this.bookingForm = this.fb.group({
-      name: ['', [Validators.required]], // Added validation rule
+      name: ['', [Validators.required]],
       date: [this.selectedDate, [Validators.required]],
       time: ['', [Validators.required]],
       clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
+      technicianId: ['', [Validators.required]],
       description: [qParams['description'] || '']
     });
 
     this.loadSlots();
     this.loadClients();
+    this.loadTechnicians();
   }
 
   loadSlots(): void {
@@ -77,6 +78,17 @@ export class ReservationScheduleComponent implements OnInit {
     });
   }
 
+  loadTechnicians(): void {
+    this.userService.getTechnicians().subscribe({
+      next: (data: SystemUser[]) => {
+        this.technicians = data;
+      },
+      error: (err: any) => {
+        console.error('Failed to load technicians list', err);
+      }
+    });
+  }
+
   onDateChange(): void {
     this.bookingForm.patchValue({ date: this.selectedDate });
     this.loadSlots();
@@ -90,13 +102,12 @@ export class ReservationScheduleComponent implements OnInit {
     if (!slot.reservationId) return;
 
     const reason = prompt("Enter the reason for cancelling this reservation (optional):");
-    if (reason === null) return; // Abort cancel on prompt cancel
+    if (reason === null) return;
 
     this.reservationService.cancelSlot(slot.reservationId, reason).subscribe({
       next: () => {
-        this.loadSlots(); // Reload timeline instantly
-        this.notificationService.updateUnreadCount(); // Add this: Syncs sidebar badge instantly [1.2.6]
-
+        this.loadSlots();
+        this.notificationService.updateUnreadCount();
       },
       error: (err: any) => {
         console.error('Failed to cancel reservation', err);
@@ -112,20 +123,30 @@ export class ReservationScheduleComponent implements OnInit {
 
     const formValue = this.bookingForm.value;
     const request: BookingRequest = {
-      name: formValue.name, // Map the name
+      name: formValue.name,
       clientId: Number(formValue.clientId),
       date: formValue.date,
       time: formValue.time,
+      technicianId: Number(formValue.technicianId),
       description: formValue.description
     };
 
     this.reservationService.bookSlot(request).subscribe({
       next: () => {
         this.errorMessage = '';
-        this.bookingForm.patchValue({ time: '', description: '' });
-        this.loadSlots(); // Reload timeline on successful booking
-        this.notificationService.updateUnreadCount(); // Add this: Syncs sidebar badge instantly [1.2.6]
+        
+        // Safely resets the validation state (clears all red warning outlines) [1.2.6]
+        this.bookingForm.reset({
+          date: this.selectedDate, // Preserves the active date
+          name: '',
+          time: '',
+          clientId: '',
+          technicianId: '',
+          description: ''
+        });
 
+        this.loadSlots();
+        this.notificationService.updateUnreadCount();
       },
       error: (err: any) => {
         this.errorMessage = 'Failed to book slot. This time might already be reserved.';

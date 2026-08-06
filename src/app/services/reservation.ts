@@ -11,6 +11,8 @@ export interface Reservation {
   description?: string;
   status: string;
   cancellationReason?: string;
+  technician?: any; // Added assigned technician [1.2.6]
+  technicianId?: number;
 }
 
 export interface TimeSlot {
@@ -27,6 +29,7 @@ export interface BookingRequest {
   date: string;
   time: string;
   description?: string;
+  technicianId: number; // Added field
 }
 
 @Injectable({
@@ -73,5 +76,10 @@ export class ReservationService {
   // GET active bookings starting within 1 hour
   getUpcomingAlerts(): Observable<Reservation[]> {
     return this.http.get<Reservation[]>(`${this.apiUrl}/upcoming-alerts`);
+  }
+
+  // Add inside the ReservationService class:
+  deleteReservation(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

@@ -29,4 +29,8 @@ export class UserManagementService {
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  getTechnicians(): Observable<SystemUser[]> {
+    return this.http.get<SystemUser[]>(`${this.apiUrl}/technicians`);
+  }
 }

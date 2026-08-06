@@ -41,7 +41,9 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.initCalendar();
+    setTimeout(() => {
+      this.initCalendar();
+    }, 100);
   }
 
   loadReservations(): void {
@@ -49,7 +51,7 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
       next: (data: Reservation[]) => {
         this.reservations = data;
         this.calculateStatusCounts();
-        this.updateCalendarEvents(); // Automatically update calendar data source [1.2.6]
+        this.updateCalendarEvents();
       },
       error: (err: any) => {
         console.error('Failed to load reservations', err);
@@ -74,10 +76,9 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   switchView(viewName: string): void {
     this.currentView = viewName;
     if (viewName === 'calendar' && this.calendar) {
-      // Small timeout allows the container's d-none to be removed before calculating size [1.1.8]
       setTimeout(() => {
-        this.calendar.updateSize();   // FORCES FullCalendar to recalculate its dimensions [1.1.8]
-        this.updateCalendarEvents(); // Refreshes events securely
+        this.calendar.updateSize();
+        this.updateCalendarEvents();
       }, 50);
     }
   }
@@ -137,7 +138,6 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Maps events directly from local memory (No DOM query selectors or Thymeleaf needed) [1.2.6]
   updateCalendarEvents(): void {
     if (!this.calendar) return;
 
@@ -151,11 +151,59 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
         clientPhone: this.getPrimaryPhone(res.client),
         description: res.description,
         status: res.status,
-        cancellationReason: res.cancellationReason
+        cancellationReason: res.cancellationReason,
+        technicianName: res.technician ? (res.technician.firstName + ' ' + res.technician.lastName) : 'Unassigned'
       }
     }));
 
     this.calendar.removeAllEvents();
     this.calendar.addEventSource(events);
+  }
+
+  deleteReservation(id: number): void {
+    if (confirm('Permanently delete this meeting/reservation?')) {
+      this.reservationService.deleteReservation(id).subscribe({
+        next: () => {
+          this.loadReservations();
+          this.notificationService.updateUnreadCount();
+        },
+        error: (err: any) => console.error('Deletion failed', err)
+      });
+    }
+  }
+
+  // Universal Sorter [1.1.4]
+  sort(headerEl: HTMLTableCellElement): void {
+    const table = headerEl.closest('table');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody?.querySelectorAll('tr:not(.text-center)') || []);
+    if (rows.length === 0) return;
+
+    const index = Array.from(headerEl.parentNode?.children || []).indexOf(headerEl);
+    const isAscending = headerEl.getAttribute('data-sort-dir') === 'asc';
+    const nextDir = isAscending ? 'desc' : 'asc';
+    headerEl.setAttribute('data-sort-dir', nextDir);
+
+    table.querySelectorAll('th.sortable i').forEach(icon => {
+      icon.className = 'bi bi-arrow-down-up ms-1 text-muted';
+    });
+
+    const icon = headerEl.querySelector('i');
+    if (icon) {
+      icon.className = nextDir === 'asc' ? 'bi bi-caret-up-fill ms-1 text-primary' : 'bi bi-caret-down-fill ms-1 text-primary';
+    }
+
+    rows.sort((rowA, rowB) => {
+      const cellA = rowA.children[index].textContent?.trim() || '';
+      const cellB = rowB.children[index].textContent?.trim() || '';
+
+      if (!isNaN(Number(cellA)) && !isNaN(Number(cellB)) && cellA !== '' && cellB !== '') {
+        return isAscending ? Number(cellB) - Number(cellA) : Number(cellA) - Number(cellB);
+      }
+      return isAscending ? cellB.localeCompare(cellA) : cellA.localeCompare(cellB);
+    });
+
+    rows.forEach(row => tbody?.appendChild(row));
   }
 }

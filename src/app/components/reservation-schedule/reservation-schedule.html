@@ -122,18 +122,29 @@
               </div>
             </div>
 
-            <!-- Client Selector -->
+            <!-- Choose Client -->
             <div class="mb-3">
               <label class="form-label text-muted small fw-medium">Select Client File</label>
-              <select formControlName="clientId" class="form-select"
-                      [class.is-invalid]="bookingForm.get('clientId')?.touched && bookingForm.get('clientId')?.invalid" required>
+              <select formControlName="clientId" class="form-select bg-light" required>
                 <option value="" disabled>-- Choose Client --</option>
                 @for (client of clients; track client.id) {
                   <option [value]="client.id">{{ client.name }} ({{ client.email }})</option>
                 }
               </select>
-              <div class="text-danger small mt-1" *ngIf="bookingForm.get('clientId')?.touched && bookingForm.get('clientId')?.hasError('required')">
-                Please assign a client to this reservation.
+            </div>
+
+            <!-- Assign IT Technician Dropdown (Restricted to ROLE_TECHNICIAN) [1.2.1] -->
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-medium">Assign IT Technician</label>
+              <select formControlName="technicianId" class="form-select bg-light" required
+                      [class.is-invalid]="bookingForm.get('technicianId')?.touched && bookingForm.get('technicianId')?.invalid">
+                <option value="" disabled>-- Select Technician --</option>
+                @for (tech of technicians; track tech.id) {
+                  <option [value]="tech.id">{{ tech.firstName }} {{ tech.lastName }}</option>
+                }
+              </select>
+              <div class="text-danger small mt-1" *ngIf="bookingForm.get('technicianId')?.touched && bookingForm.get('technicianId')?.hasError('required')">
+                Assigning an IT Technician is required.
               </div>
             </div>
 
