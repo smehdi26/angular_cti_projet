@@ -266,4 +266,13 @@ export class ContractListComponent implements OnInit, AfterViewInit {
 
     rows.forEach(row => tbody?.appendChild(row));
   }
+  
+  // Checks if a given visit date belongs to the currently selected month and year [1.1.4, 1.2.6]
+  isDateInSelectedMonth(dateStr: string | undefined): boolean {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    const m = date.getMonth() + 1; // 1-based month
+    const y = date.getFullYear();
+    return m === Number(this.selectedMonth) && y === Number(this.selectedYear);
+  }
 }

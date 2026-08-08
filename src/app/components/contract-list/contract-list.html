@@ -191,11 +191,8 @@
       </div>
     </div>
 
-    <!-- Monthly Audit Sheet -->
+    <!-- Monthly Audit Sheet (Restored to 6 columns, displaying only matching month dates) [1.1.3, 1.1.4, 1.2.1, 1.2.6] -->
     <div class="card shadow-sm border-0">
-      <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center no-print">
-        <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-range text-primary me-1"></i> Suivi des Visites - {{ monthsList[selectedMonth - 1].name }}</h5>
-      </div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-bordered align-middle mb-0">
@@ -226,27 +223,93 @@
                     <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
                     <span class="print-only d-none">{{ contract.name }}</span>
                   </td>
-                  <!-- Visit Dates formatted as DD/MM/YYYY -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate1}">
-                    {{ contract.visitDate1 ? (contract.visitDate1 | date:'dd/MM/yyyy') : '-' }}
+                  
+                  <!-- Visit #1 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate1)}">
+                    @if (isDateInSelectedMonth(contract.visitDate1)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate1 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile1" [href]="contract.visitFile1" target="_blank" [title]="contract.visitFileName1">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate2}">
-                    {{ contract.visitDate2 ? (contract.visitDate2 | date:'dd/MM/yyyy') : '-' }}
+
+                  <!-- Visit #2 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate2)}">
+                    @if (isDateInSelectedMonth(contract.visitDate2)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate2 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile2" [href]="contract.visitFile2" target="_blank" [title]="contract.visitFileName2">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate3}">
-                    {{ contract.visitDate3 ? (contract.visitDate3 | date:'dd/MM/yyyy') : '-' }}
+
+                  <!-- Visit #3 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate3)}">
+                    @if (isDateInSelectedMonth(contract.visitDate3)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate3 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile3" [href]="contract.visitFile3" target="_blank" [title]="contract.visitFileName3">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate4}">
-                    {{ contract.visitDate4 ? (contract.visitDate4 | date:'dd/MM/yyyy') : '-' }}
+
+                  <!-- Visit #4 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate4)}">
+                    @if (isDateInSelectedMonth(contract.visitDate4)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate4 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile4" [href]="contract.visitFile4" target="_blank" [title]="contract.visitFileName4">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate5}">
-                    {{ contract.visitDate5 ? (contract.visitDate5 | date:'dd/MM/yyyy') : '-' }}
+
+                  <!-- Visit #5 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate5)}">
+                    @if (isDateInSelectedMonth(contract.visitDate5)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate5 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile5" [href]="contract.visitFile5" target="_blank" [title]="contract.visitFileName5">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !contract.visitDate6}">
-                    {{ contract.visitDate6 ? (contract.visitDate6 | date:'dd/MM/yyyy') : '-' }}
+
+                  <!-- Visit #6 Cell -->
+                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate6)}">
+                    @if (isDateInSelectedMonth(contract.visitDate6)) {
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>{{ contract.visitDate6 | date:'dd/MM/yyyy' }}</span>
+                        <a *ngIf="contract.visitFile6" [href]="contract.visitFile6" target="_blank" [title]="contract.visitFileName6">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </a>
+                      </div>
+                    } @else {
+                      -
+                    }
                   </td>
                 </tr>
-              } @empty {
+              }
+              @if (monthlyContracts.length === 0) {
                 <tr>
                   <td colspan="9" class="text-center text-muted py-5">
                     <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
