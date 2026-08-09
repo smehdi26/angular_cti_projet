@@ -8,6 +8,7 @@ import { Sector } from '../../services/client';
 import { NotificationService } from '../../services/notification';
 
 declare var bootstrap: any;
+declare var XLSX: any; // ADDED: Declares the global SheetJS Excel variable [1.2.6]
 
 @Component({
   selector: 'app-contract-list',
@@ -274,5 +275,180 @@ export class ContractListComponent implements OnInit, AfterViewInit {
     const m = date.getMonth() + 1; // 1-based month
     const y = date.getFullYear();
     return m === Number(this.selectedMonth) && y === Number(this.selectedYear);
+  }
+
+  // Compiles and downloads an Excel-compatible CSV file of the scheduled visit log [1.2.1, 1.2.6]
+  exportMonthlyCsv(): void {
+    if (this.monthlyContracts.length === 0) {
+      alert('Aucune visite planifiée pour ce mois à exporter.');
+      return;
+    }
+
+    // 1. Define Column Headers
+    const headers = ['Client Code', 'Client Name', 'Contract Name', 'Visit Number', 'Visit Date', 'Attachment'];
+    const csvRows = [headers.join(',')];
+
+    // 2. Map and compile row data
+    this.monthlyContracts.forEach(contract => {
+      // Loop over the 6 potential visits [1.1.4, 1.2.6]
+      const checkAndPushRow = (dateStr: string | undefined, fileName: string | undefined, visitNum: number) => {
+        if (dateStr && this.isDateInSelectedMonth(dateStr)) {
+          const clientCode = contract.client ? contract.client.clientCode : 'N/A';
+          // Clean strings of commas to prevent cell misalignment
+          const clientName = contract.client ? contract.client.name.replace(/,/g, ' ') : 'Unknown';
+          const contractName = contract.name.replace(/,/g, ' ');
+          const visitLabel = `Visite #${visitNum}`;
+          
+          // Format date as DD/MM/YYYY
+          const dateObj = new Date(dateStr);
+          const formattedDate = dateObj.toLocaleDateString('fr-FR');
+          
+          const fileLabel = fileName ? fileName.replace(/,/g, ' ') : 'None';
+
+          const row = [clientCode, clientName, contractName, visitLabel, formattedDate, fileLabel];
+          csvRows.push(row.map(val => `"${val}"`).join(',')); // Wrap values in quotes
+        }
+      };
+
+      checkAndPushRow(contract.visitDate1, contract.visitFileName1, 1);
+      checkAndPushRow(contract.visitDate2, contract.visitFileName2, 2);
+      checkAndPushRow(contract.visitDate3, contract.visitFileName3, 3);
+      checkAndPushRow(contract.visitDate4, contract.visitFileName4, 4);
+      checkAndPushRow(contract.visitDate5, contract.visitFileName5, 5);
+      checkAndPushRow(contract.visitDate6, contract.visitFileName6, 6);
+    });
+
+    // 3. Inject UTF-8 BOM so Excel reads French accent characters correctly [1.2.1]
+    const csvContent = '\uFEFF' + csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // 4. Trigger browser download
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    const monthName = this.monthsList[this.selectedMonth - 1].name;
+    link.setAttribute('download', `Suivi_Visites_Maintenance_${monthName}_${this.selectedYear}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Triggers the browser print dialog for the global contracts directory [1.2.1]
+  exportAllContractsPdf(): void {
+    window.print();
+  }
+
+  // Compiles and downloads an Excel-compatible CSV of all contracts in the directory [1.2.1, 1.2.6]
+  exportAllContractsCsv(): void {
+    if (this.contracts.length === 0) {
+      alert('Aucun contrat enregistré à exporter.');
+      return;
+    }
+
+    // 1. Define Column Headers
+    const headers = ['Client Code', 'Client Name', 'Redevance', 'Contract Name', 'Signature Date', 'N.D.V', 'Months of Visits'];
+    const csvRows = [headers.join(',')];
+
+    // 2. Build Rows
+    this.contracts.forEach(contract => {
+      const clientCode = contract.client ? contract.client.clientCode : 'N/A';
+      const clientName = contract.client ? contract.client.name.replace(/,/g, ' ') : 'Unknown';
+      const redevance = contract.redevance;
+      const contractName = contract.name.replace(/,/g, ' ');
+      const signature = contract.dateSignature || '-';
+      const ndv = contract.numberOfVisits || 0;
+      const months = contract.monthsOfVisits ? contract.monthsOfVisits.replace(/,/g, ' ') : 'Aucun';
+
+      const row = [clientCode, clientName, redevance, contractName, signature, ndv.toString(), months];
+      csvRows.push(row.map(val => `"${val}"`).join(',')); // Wrap values in quotes to prevent spacing conflicts
+    });
+
+    // 3. Inject UTF-8 BOM so Excel opens French accent characters correctly [1.2.1]
+    const csvContent = '\uFEFF' + csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // 4. Trigger browser download
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    const todayStr = this.todayDate.toISOString().split('T')[0];
+    link.setAttribute('download', `Registre_Global_Contrats_Maintenance_${todayStr}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Generates and downloads a native Microsoft Excel (.xlsx) file of all contracts [1.2.1, 1.2.6]
+  exportAllContractsXlsx(): void {
+    if (this.contracts.length === 0) {
+      alert('Aucun contrat enregistré à exporter.');
+      return;
+    }
+
+    // 1. Prepare JSON data structure matching your directory columns
+    const data = this.contracts.map(contract => ({
+      'Client Code': contract.client ? contract.client.clientCode : 'N/A',
+      'Client Name': contract.client ? contract.client.name : 'Unknown',
+      'Redevance': contract.redevance,
+      'Contract Name': contract.name,
+      'Signature Date': contract.dateSignature || '-',
+      'N.D.V': contract.numberOfVisits || 0,
+      'Months of Visits': contract.monthsOfVisits || 'Aucun mois planifié'
+    }));
+
+    // 2. Generate worksheet and workbook [1.2.6]
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registre Contrats');
+
+    // 3. Trigger download [1.2.6]
+    const todayStr = this.todayDate.toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Registre_Global_Contrats_Maintenance_${todayStr}.xlsx`);
+  }
+
+  // Generates and downloads a native Microsoft Excel (.xlsx) file of the monthly audit [1.2.1, 1.2.6]
+  exportMonthlyXlsx(): void {
+    if (this.monthlyContracts.length === 0) {
+      alert('Aucune visite planifiée pour ce mois à exporter.');
+      return;
+    }
+
+    // 1. Prepare JSON data structure matching your monthly audit columns
+    const data: any[] = [];
+    this.monthlyContracts.forEach(contract => {
+      const checkAndPushRow = (dateStr: string | undefined, fileName: string | undefined, visitNum: number) => {
+        if (dateStr && this.isDateInSelectedMonth(dateStr)) {
+          data.push({
+            'Client Code': contract.client ? contract.client.clientCode : 'N/A',
+            'Client Name': contract.client ? contract.client.name : 'Unknown',
+            'Contract Name': contract.name,
+            'Visit Number': `Visite #${visitNum}`,
+            'Visit Date': new Date(dateStr).toLocaleDateString('fr-FR'),
+            'Attachment Report': fileName || 'None'
+          });
+        }
+      };
+
+      checkAndPushRow(contract.visitDate1, contract.visitFileName1, 1);
+      checkAndPushRow(contract.visitDate2, contract.visitFileName2, 2);
+      checkAndPushRow(contract.visitDate3, contract.visitFileName3, 3);
+      checkAndPushRow(contract.visitDate4, contract.visitFileName4, 4);
+      checkAndPushRow(contract.visitDate5, contract.visitFileName5, 5);
+      checkAndPushRow(contract.visitDate6, contract.visitFileName6, 6);
+    });
+
+    // 2. Generate worksheet and workbook [1.2.6]
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    
+    const monthName = this.monthsList[this.selectedMonth - 1].name;
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Visites ${monthName}`);
+
+    // 3. Trigger download [1.2.6]
+    XLSX.writeFile(workbook, `Suivi_Visites_Maintenance_${monthName}_${this.selectedYear}.xlsx`);
   }
 }

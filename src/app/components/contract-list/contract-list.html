@@ -1,16 +1,13 @@
 <div class="container-fluid py-4" *ngIf="contracts">
-  <!-- Header -->
+  <!-- Header (Hidden on print) -->
   <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom no-print">
     <div>
       <h3 class="fw-bold text-dark mb-1">Contracts Directory</h3>
       <p class="text-muted mb-0">Manage customer files, scheduled visit dates, and maintenance agreements</p>
     </div>
-    <a [routerLink]="['/contracts/add']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2">
-      <i class="bi bi-calendar-plus"></i> + Add Contract
-    </a>
   </div>
 
-  <!-- Notion-style Sub-tab Selectors -->
+  <!-- Notion-style Sub-tab Selectors (Hidden on print) -->
   <ul class="nav nav-tabs mb-4 pb-1 no-print">
     <li class="nav-item">
       <button class="nav-link fw-semibold" [class.active]="activeTab === 'directory'" (click)="activeTab = 'directory'">
@@ -25,9 +22,23 @@
   </ul>
 
   <!-- TAB 1: ALL CONTRACTS REGISTER -->
-  <div *ngIf="activeTab === 'directory'" class="no-print">
-    <!-- Search Form -->
-    <div class="card mb-4 shadow-sm border-0">
+  <div *ngIf="activeTab === 'directory'">
+    
+    <!-- PDF PRINT HEADER: Visible only on All Contracts PDF exports [1.2.1] -->
+    <div class="print-header mb-4 pb-3 border-bottom d-none">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="fw-bold text-dark mb-0">CTI NETWORK</h3>
+          <small class="text-muted text-uppercase fw-bold">REGISTRE GLOBAL DES CONTRATS DE MAINTENANCE</small>
+        </div>
+        <div class="text-end">
+          <small class="text-muted">Généré le: {{ todayDate | date:'yyyy-MM-dd' }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Form (Hidden on print) -->
+    <div class="card mb-4 shadow-sm border-0 no-print">
       <div class="card-body bg-white rounded p-3">
         <div class="row g-2 align-items-center">
           <div class="col-md-5">
@@ -37,7 +48,7 @@
                      class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, client, months...">
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="input-group">
               <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-funnel"></i></span>
               <select class="form-select bg-light border-start-0 ps-0" [(ngModel)]="redevanceFilter" (change)="onSearchAndFilter()">
@@ -58,10 +69,14 @@
               </select>
             </div>
           </div>
-          <div class="col-md-2">
-            <button (click)="resetFilters()" class="btn btn-light border w-100">
-              <i class="bi bi-arrow-counterclockwise"></i> Reset
-            </button>
+          <!-- Integrated Action Buttons: Search, PDF, CSV, and Reset [1.2.1, 1.2.6] -->
+          <div class="col-md-3 d-flex gap-2">
+            <button (click)="onSearchAndFilter()" class="btn btn-primary flex-grow-1">Search</button>
+            <button (click)="exportAllContractsPdf()" class="btn btn-outline-primary" title="Export as PDF"><i class="bi bi-file-pdf"></i></button>
+            <button (click)="exportAllContractsCsv()" class="btn btn-outline-success" title="Export as CSV"><i class="bi bi-file-earmark-spreadsheet"></i></button>
+            <!-- Added: XLSX button [1.2.1] -->
+            <button (click)="exportAllContractsXlsx()" class="btn btn-outline-info" title="Export as Excel (XLSX)"><i class="bi bi-file-earmark-excel"></i></button>
+            <button (click)="resetFilters()" class="btn btn-light border px-2" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></button>
           </div>
         </div>
       </div>
@@ -79,7 +94,7 @@
               <th #colSignature class="sortable" (click)="sort(colSignature)">D. Signature <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
               <th #colVisits class="sortable text-center" (click)="sort(colVisits)">N.D.V <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
               <th>Months of Visits</th>
-              <th class="text-end" style="width: 140px;">Actions</th>
+              <th class="text-end no-print" style="width: 140px;">Actions</th> <!-- Hidden on print [1.2.1] -->
             </tr>
           </thead>
           <tbody>
@@ -87,9 +102,12 @@
               <tr>
                 <td>
                   <div class="d-flex align-items-center gap-2" *ngIf="contract.client">
-                    <a [routerLink]="['/clients', getPrimaryPhone(contract.client)]" class="text-decoration-none">
+                    <!-- Standard Interactive Redirect (Hidden on print) -->
+                    <a [routerLink]="['/clients', getPrimaryPhone(contract.client)]" class="text-decoration-none no-print">
                       <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ contract.client.clientCode }}</span>
                     </a>
+                    <!-- Standard Plain-text block (Visible on print only) [1.2.1] -->
+                    <span class="print-only d-none fw-bold text-dark">{{ contract.client.clientCode }}</span>
                   </div>
                 </td>
                 <td>
@@ -100,19 +118,20 @@
                   }">{{ contract.redevance }}</span>
                 </td>
                 <td class="fw-semibold">
-                  <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark">{{ contract.name }}</a>
+                  <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
+                  <span class="print-only d-none fw-bold text-dark">{{ contract.name }}</span>
                 </td>
                 <td>{{ contract.dateSignature }}</td>
                 <td class="text-center fw-bold">{{ contract.numberOfVisits }}</td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
                     <span>{{ contract.monthsOfVisits || 'Aucun mois planifié' }}</span>
-                    <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0" (click)="openScheduleModal(contract)" title="Schedule Parameters">
+                    <button type="button" class="btn btn-xs btn-outline-secondary p-1 border-0 no-print" (click)="openScheduleModal(contract)" title="Schedule Parameters">
                       <i class="bi bi-calendar-check text-primary fs-5"></i>
                     </button>
                   </div>
                   
-                  <!-- Display active visit attachments as downloadable links [1.2.6] -->
+                  <!-- Display active visit attachments as downloadable links -->
                   <div class="d-flex flex-wrap gap-1 mt-1" style="font-size: 11px;">
                     <a *ngIf="contract.visitFile1" [href]="contract.visitFile1" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName1">
                       <i class="bi bi-file-earmark-pdf"></i> #1
@@ -134,7 +153,7 @@
                     </a>
                   </div>
                 </td>
-                <td class="text-end">
+                <td class="text-end no-print"> <!-- Hidden on print [1.2.1] -->
                   <button (click)="deleteContract(contract.id!)" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-trash"></i>
                   </button>
@@ -168,7 +187,7 @@
     <div class="card mb-4 shadow-sm border-0 no-print">
       <div class="card-body bg-white rounded p-3">
         <div class="row g-2 align-items-center">
-          <div class="col-md-5">
+          <div class="col-md-4">
             <select class="form-select bg-light" [(ngModel)]="selectedMonth" (change)="loadMonthlyAudit()">
               @for (m of monthsList; track m.value) {
                 <option [value]="m.value">Mois: {{ m.name }}</option>
@@ -182,9 +201,17 @@
               }
             </select>
           </div>
-          <div class="col-md-3">
-            <button (click)="exportMonthlyPdf()" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2">
-              <i class="bi bi-file-pdf"></i> Exporter PDF Mensuel
+          <!-- Export Buttons: PDF, CSV, and XLSX [1.2.1] -->
+          <div class="col-md-4 d-flex gap-2">
+            <button (click)="exportMonthlyPdf()" class="btn btn-outline-primary flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-file-pdf"></i> PDF
+            </button>
+            <button (click)="exportMonthlyCsv()" class="btn btn-outline-success flex-grow-1 d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+            </button>
+            <!-- Added: XLSX button [1.2.1] -->
+            <button (click)="exportMonthlyXlsx()" class="btn btn-outline-info flex-grow-1 d-flex align-items-center justify-content-center gap-1">
+              <i class="bi bi-file-earmark-excel"></i> Excel
             </button>
           </div>
         </div>
@@ -199,7 +226,7 @@
             <thead class="table-light text-center">
               <tr>
                 <th style="width: 100px;">Client Code</th>
-                <th>Redevance</th>
+                <th>Client Name</th>
                 <th>Contrat Name</th>
                 <th>Visit #1</th>
                 <th>Visit #2</th>
@@ -216,8 +243,9 @@
                   <td class="text-center fw-bold">
                     <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ contract.client?.clientCode }}</span>
                   </td>
-                  <!-- Redevance -->
-                  <td>{{ contract.redevance }}</td>
+                  <td class="fw-bold text-dark">
+                    {{ contract.client != null ? contract.client.name : 'Unknown Client' }}
+                  </td>
                   <!-- Contract Name -->
                   <td class="fw-semibold text-dark">
                     <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
