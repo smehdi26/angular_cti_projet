@@ -1,6 +1,6 @@
 <div class="d-flex">
-  <!-- Global Sidebar (Hidden on Login and Register Screens) -->
-  <aside class="sidebar d-flex flex-column" *ngIf="showSidebar()">
+  <!-- Global Sidebar (Added 'no-print' class to hide on PDF exports) [1.2.1] -->
+  <aside class="sidebar d-flex flex-column no-print" *ngIf="showSidebar()">
     <!-- Sidebar Brand Header -->
     <div class="px-4 py-4 d-flex align-items-center gap-3">
       <div class="bg-primary p-2 rounded text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
