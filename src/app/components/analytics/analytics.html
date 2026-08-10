@@ -1,55 +1,71 @@
 <div class="container-fluid py-4">
-  <!-- Header -->
+  <!-- HEADER SECTION -->
   <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
-      <h3 class="fw-bold text-dark mb-1">Operational Analytics</h3>
-      <p class="text-muted mb-0">Real-time performance metrics and business distribution</p>
+      <h3 class="fw-bold text-dark mb-1">Business Intelligence Dashboard</h3>
+      <p class="text-muted mb-0">Operational performance and maintenance compliance metrics</p>
     </div>
-    <button (click)="loadData()" class="btn btn-light border d-flex align-items-center gap-2">
-      <i class="bi bi-arrow-clockwise"></i> Refresh Data
+    <button (click)="loadData()" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+      <i class="bi bi-arrow-clockwise"></i> Refresh Stats
     </button>
   </div>
 
-  <div *ngIf="!loading; else loader">
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="d-flex flex-column align-items-center justify-content-center py-5">
+    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+    <p class="text-muted fw-medium">Analyzing database records...</p>
+  </div>
+
+  <!-- MAIN CONTENT (Only shows when data is ready) -->
+  <div *ngIf="!loading && stats">
     
-    <!-- KPI Summary Row -->
+    <!-- TOP KPI ROW -->
     <div class="row g-4 mb-4">
+      <!-- KPI: Operational Execution -->
       <div class="col-md-3">
         <div class="card p-3 border-0 shadow-sm bg-white border-start border-primary border-4">
-          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Execution Rate</small>
-          <h3 class="fw-bold mb-0 text-primary">{{ stats.executionRate.percentage }}%</h3>
-          <p class="text-muted small mb-0">{{ stats.executionRate.completed }} / {{ stats.executionRate.total }} visits</p>
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">Operational Execution</small>
+          <h3 class="fw-bold mb-0 text-primary">{{ stats.executionRate.performedPct }}%</h3>
+          <p class="text-muted small mb-0">{{ stats.executionRate.performed }} / {{ stats.executionRate.totalRequired }} Visits Performed</p>
         </div>
       </div>
+
+      <!-- KPI: Documentation Compliance -->
       <div class="col-md-3">
         <div class="card p-3 border-0 shadow-sm bg-white border-start border-success border-4">
-          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Major Sector</small>
-          <h3 class="fw-bold mb-0 text-success">{{ sectorPieOptions.labels[0] || 'N/A' }}</h3>
-          <p class="text-muted small mb-0">Most active industry</p>
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">Report Compliance</small>
+          <h3 class="fw-bold mb-0 text-success">{{ stats.executionRate.documentedPct }}%</h3>
+          <p class="text-muted small mb-0">{{ stats.executionRate.documented }} Reports Uploaded</p>
         </div>
       </div>
+
+      <!-- KPI: Untreated Requests -->
       <div class="col-md-3">
         <div class="card p-3 border-0 shadow-sm bg-white border-start border-warning border-4">
-          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Pending Meetings</small>
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">Pending Meetings</small>
           <h3 class="fw-bold mb-0 text-warning">{{ stats.reservationStatus['UNTREATED'] || 0 }}</h3>
-          <p class="text-muted small mb-0">Awaiting technician action</p>
+          <p class="text-muted small mb-0">Awaiting Technician Action</p>
         </div>
       </div>
+
+      <!-- KPI: Regional Density -->
       <div class="col-md-3">
         <div class="card p-3 border-0 shadow-sm bg-white border-start border-info border-4">
-          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Top Region</small>
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">Top Region</small>
           <h3 class="fw-bold mb-0 text-info">{{ cityTreemapOptions.series[0].data[0]?.x || 'N/A' }}</h3>
-          <p class="text-muted small mb-0">Highest client density</p>
+          <p class="text-muted small mb-0">Highest Client Concentration</p>
         </div>
       </div>
     </div>
 
-    <!-- Main Charts Grid -->
+    <!-- ROW 1: PERFORMANCE & WORKLOAD -->
     <div class="row g-4 mb-4">
-      <!-- Maintenance Execution -->
+      <!-- DOUBLE RADIAL: Execution vs Documentation -->
       <div class="col-lg-4">
-        <div class="card p-4 border-0 shadow-sm h-100 bg-white">
-          <h6 class="fw-bold mb-4">Maintenance Completion</h6>
+        <div class="card p-4 border-0 shadow-sm h-100 bg-white text-center">
+          <h6 class="fw-bold mb-1 text-dark text-start">Maintenance Integrity</h6>
+          <p class="text-muted small text-start mb-3">Comparing physical work vs. digital reporting</p>
+          
           <apx-chart
             [series]="executionRadialOptions.series"
             [chart]="executionRadialOptions.chart"
@@ -57,10 +73,21 @@
             [labels]="executionRadialOptions.labels"
             [colors]="executionRadialOptions.colors">
           </apx-chart>
+
+          <div class="mt-2 border-top pt-3 text-start">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small text-muted"><i class="bi bi-circle-fill text-primary me-2"></i> Performed Visits</span>
+              <span class="fw-bold text-dark">{{ stats.executionRate.performed }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small text-muted"><i class="bi bi-circle-fill text-success me-2"></i> With PDF Report</span>
+              <span class="fw-bold text-dark">{{ stats.executionRate.documented }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Tech Workload -->
+      <!-- HORIZONTAL BAR: Tech Workload -->
       <div class="col-lg-8">
         <div class="card p-4 border-0 shadow-sm h-100 bg-white">
           <apx-chart
@@ -73,11 +100,14 @@
           </apx-chart>
         </div>
       </div>
+    </div>
 
-      <!-- Sector Distribution -->
+    <!-- ROW 2: INDUSTRY & GEOGRAPHY -->
+    <div class="row g-4 mb-4">
+      <!-- PIE: Sectors -->
       <div class="col-lg-4">
         <div class="card p-4 border-0 shadow-sm bg-white">
-          <h6 class="fw-bold mb-4">Business Sectors</h6>
+          <h6 class="fw-bold mb-4">Client Business Sectors</h6>
           <apx-chart
             [series]="sectorPieOptions.series"
             [chart]="sectorPieOptions.chart"
@@ -88,7 +118,7 @@
         </div>
       </div>
 
-      <!-- Region Treemap -->
+      <!-- TREEMAP: Governorates -->
       <div class="col-lg-8">
         <div class="card p-4 border-0 shadow-sm bg-white">
           <apx-chart
@@ -99,11 +129,14 @@
           </apx-chart>
         </div>
       </div>
+    </div>
 
-      <!-- Contract & Status Row -->
+    <!-- ROW 3: CONTRACTS & RESERVATIONS -->
+    <div class="row g-4 mb-5">
+      <!-- BAR: Contract Redevance -->
       <div class="col-lg-6">
         <div class="card p-4 border-0 shadow-sm bg-white">
-          <h6 class="fw-bold mb-4">Contract Redevance Split</h6>
+          <h6 class="fw-bold mb-4">Contract Terms Distribution</h6>
           <apx-chart
             [series]="contractBarOptions.series"
             [chart]="contractBarOptions.chart"
@@ -114,6 +147,7 @@
         </div>
       </div>
 
+      <!-- DONUT: Meeting Status -->
       <div class="col-lg-6">
         <div class="card p-4 border-0 shadow-sm bg-white">
           <h6 class="fw-bold mb-4">Meeting Status Mix</h6>
@@ -127,15 +161,47 @@
           </apx-chart>
         </div>
       </div>
-
     </div>
+
   </div>
 
-  <!-- Loading State -->
-  <ng-template #loader>
-    <div class="d-flex flex-column align-items-center justify-content-center py-5">
-      <div class="spinner-border text-primary mb-3" role="status"></div>
-      <p class="text-muted">Calculating business intelligence metrics...</p>
+  <!-- FALLBACK: Empty State -->
+  <div *ngIf="!loading && !stats" class="text-center py-5">
+    <i class="bi bi-database-exclamation fs-1 text-muted"></i>
+    <h5 class="mt-3 text-muted">No data available to generate charts.</h5>
+    <p class="text-muted">Ensure your database has active Clients and Contracts.</p>
+  </div>
+
+  <!-- Add this section at the bottom of analytics.html, inside the *ngIf="!loading && stats" div -->
+
+<div class="row g-4 mb-5">
+  <div class="col-12">
+    <div class="card p-4 border-0 shadow-sm bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h5 class="fw-bold mb-1 text-dark">Reservation Volume Trends</h5>
+          <p class="text-muted small mb-0">Monthly comparison of meeting lifecycle statuses</p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-light text-dark border fw-normal">Current Year</span>
+        </div>
+      </div>
+      
+      <!-- The Column Chart -->
+      <apx-chart
+        [series]="resMonthlyChartOptions.series"
+        [chart]="resMonthlyChartOptions.chart"
+        [xaxis]="resMonthlyChartOptions.xaxis"
+        [yaxis]="resMonthlyChartOptions.yaxis"
+        [plotOptions]="resMonthlyChartOptions.plotOptions"
+        [dataLabels]="resMonthlyChartOptions.dataLabels"
+        [stroke]="resMonthlyChartOptions.stroke"
+        [fill]="resMonthlyChartOptions.fill"
+        [tooltip]="resMonthlyChartOptions.tooltip"
+        [legend]="resMonthlyChartOptions.legend">
+      </apx-chart>
     </div>
-  </ng-template>
+  </div>
+</div>
+
 </div>

@@ -19,6 +19,8 @@ export class AnalyticsComponent implements OnInit {
   public cityTreemapOptions: any;
   public executionRadialOptions: any;
   public techWorkloadOptions: any;
+  public resMonthlyChartOptions: any;
+
 
   public stats: any;
   public loading: boolean = true;
@@ -88,27 +90,29 @@ export class AnalyticsComponent implements OnInit {
       title: { text: "Client Density by Governorate", align: 'center' }
     };
 
-    // 5. Maintenance Execution Rate (Radial Bar)
-    this.executionRadialOptions = {
-      series: [data.executionRate?.percentage || 0],
-      chart: { height: 350, type: "radialBar" },
-      plotOptions: {
-        radialBar: {
-          hollow: { size: "70%" },
-          dataLabels: {
-            name: { show: true, color: "#64748b", fontSize: "14px", offsetY: -10 },
-            value: { show: true, color: "#0f172a", fontSize: "30px", fontWeight: "700", offsetY: 5 },
-            total: {
-              show: true,
-              label: "Visits Done",
-              formatter: () => data.executionRate?.completed || 0
+    // 5. Maintenance Execution & Documentation (Double Radial Bar)
+  this.executionRadialOptions = {
+    // Two series: Performed vs Documented
+    series: [data.executionRate.performedPct, data.executionRate.documentedPct],
+    chart: { height: 380, type: "radialBar" },
+    plotOptions: {
+      radialBar: {
+        dataLabels: {
+          name: { fontSize: "22px" },
+          value: { fontSize: "16px" },
+          total: {
+            show: true,
+            label: "Total Visits",
+            formatter: function(w: any) {
+              return data.executionRate.performed; // Shows total performed in the center
             }
           }
         }
-      },
-      labels: ["Completion Rate"],
-      colors: ["#10b981"]
-    };
+      }
+    },
+    labels: ["Work Performed", "Reports Attached"],
+    colors: ["#4f46e5", "#10b981"] // Indigo for work, Green for files
+  };
 
     // 6. Technician Workload (Horizontal Bar)
     this.techWorkloadOptions = {
@@ -119,5 +123,48 @@ export class AnalyticsComponent implements OnInit {
       xaxis: { categories: Object.keys(data.techWorkload || {}) },
       title: { text: "Meetings Assigned per Technician", align: "center" }
     };
+
+    // 7. Grouped Column Chart: Monthly Reservations by Status
+  this.resMonthlyChartOptions = {
+    series: [
+      { name: "Untreated", data: data.reservationMonthly['UNTREATED'], color: '#f59e0b' },
+      { name: "In Progress", data: data.reservationMonthly['IN_PROGRESS'], color: '#4f46e5' },
+      { name: "Done", data: data.reservationMonthly['DONE'], color: '#10b981' },
+      { name: "Cancelled", data: data.reservationMonthly['CANCELLED'], color: '#ef4444' }
+    ],
+    chart: {
+      type: "bar",
+      height: 350,
+      stacked: false, // Set to true if you want them on top of each other
+      toolbar: { show: true }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "55%",
+        borderRadius: 5
+      }
+    },
+    dataLabels: { enabled: false },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["transparent"]
+    },
+    xaxis: {
+      categories: data.monthLabels,
+      title: { text: "Months of the Year" }
+    },
+    yaxis: {
+      title: { text: "Number of Reservations" }
+    },
+    fill: { opacity: 1 },
+    tooltip: {
+      y: {
+        formatter: (val: number) => val + " Reservations"
+      }
+    },
+    legend: { position: 'top' }
+  };
   }
 }
