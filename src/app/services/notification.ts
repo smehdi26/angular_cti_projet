@@ -14,6 +14,8 @@ export interface NotificationLog {
   statusLevel?: string; // Added: SAFE, REMINDER, URGENT, OVERDUE
   color?: string;       // Added: GREEN, YELLOW, RED
   priority?: string;    // Added: LOW, MEDIUM, HIGH, CRITICAL
+  contractId?: number; // Added field
+  clientPhone?: string; // Added field
 }
 
 @Injectable({

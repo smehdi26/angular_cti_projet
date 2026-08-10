@@ -11,21 +11,52 @@
     </button>
   </div>
 
-  <!-- Notion-style Dual Filters and Search Bar -->
+  <!-- Notion-style Advanced Filters, Date Range & Search Bar [1.2.1] -->
   <div class="card mb-4 shadow-sm border-0">
     <div class="card-body p-4 bg-white rounded">
-      <!-- Search Input row -->
-      <div class="row g-3 align-items-center mb-3">
-        <div class="col-md-12">
-          <div class="input-group">
+      
+      <!-- Row 1: Search Input & Reset -->
+      <div class="row g-2 align-items-center mb-3">
+        <div class="col-md-10">
+          <div class="input-group input-group-sm">
             <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
             <input type="text" [(ngModel)]="searchTerm" (input)="applySearchAndFilter()" 
-                   class="form-control bg-light border-start-0 ps-0" placeholder="Filter logs by keyword, client name, or date...">
+                   class="form-control bg-light border-start-0 ps-0 text-dark" placeholder="Filter logs by keyword, client name, or descriptions...">
           </div>
+        </div>
+        <div class="col-md-2">
+          <button (click)="resetFilters()" class="btn btn-sm btn-light border w-100 d-flex align-items-center justify-content-center gap-2" title="Reset All Filters">
+            <i class="bi bi-arrow-counterclockwise text-secondary"></i> Reset
+          </button>
         </div>
       </div>
       
-      <!-- Row 2: Dual filter pills -->
+      <!-- Row 2: Date Range & Sorter Controls [1.1.4, 1.2.1, 1.2.6] -->
+      <div class="row g-3 align-items-center mb-4 pb-3 border-bottom">
+        <!-- Min Date picker -->
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light text-muted fw-medium">From Date:</span>
+            <input type="date" [(ngModel)]="startDate" (change)="applySearchAndFilter()" class="form-control bg-light text-dark">
+          </div>
+        </div>
+        <!-- Max Date picker -->
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light text-muted fw-medium">To Date:</span>
+            <input type="date" [(ngModel)]="endDate" (change)="applySearchAndFilter()" class="form-control bg-light text-dark">
+          </div>
+        </div>
+        <!-- Sort Toggle Button -->
+        <div class="col-md-2">
+          <button type="button" (click)="toggleSort()" class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi" [ngClass]="sortOrder === 'desc' ? 'bi-sort-down' : 'bi-sort-up'"></i>
+            <span>Sort: {{ sortOrder === 'desc' ? 'Newest' : 'Oldest' }}</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Row 3: Severity & Domain Category Pills -->
       <div class="row g-3">
         <!-- Severity Filters -->
         <div class="col-md-6 d-flex gap-1 align-items-center">
@@ -43,7 +74,6 @@
           <button (click)="changeCategory('CLIENT')" [class.btn-outline-dark]="activeCategory === 'CLIENT'" [class.btn-light]="activeCategory !== 'CLIENT'" class="btn btn-xs border px-3 py-1 rounded-3">Clients</button>
           <button (click)="changeCategory('CONTRACT')" [class.btn-outline-dark]="activeCategory === 'CONTRACT'" [class.btn-light]="activeCategory !== 'CONTRACT'" class="btn btn-xs border px-3 py-1 rounded-3">Contracts</button>
           <button (click)="changeCategory('RESERVATION')" [class.btn-outline-dark]="activeCategory === 'RESERVATION'" [class.btn-light]="activeCategory !== 'RESERVATION'" class="btn btn-xs border px-3 py-1 rounded-3">Reservations</button>
-          <!-- Added Users Category Pill [1.2.1] -->
           <button (click)="changeCategory('USER')" [class.btn-outline-dark]="activeCategory === 'USER'" [class.btn-light]="activeCategory !== 'USER'" class="btn btn-xs border px-3 py-1 rounded-3">Users</button>
         </div>
       </div>
@@ -53,12 +83,16 @@
   <!-- Styled Logs Timeline List -->
   <div class="d-flex flex-column gap-3">
     @for (notif of filteredNotifications; track notif.id) {
+      <!-- Clickable Card styled with a pointer cursor [1.2.1, 1.2.6] -->
       <div class="card p-3 notif-item bg-white border-0 shadow-sm" 
            [ngClass]="'notif-' + notif.type"
-           [style.opacity]="notif.readStatus ? '0.75' : '1'">
+           [style.opacity]="notif.readStatus ? '0.75' : '1'"
+           (click)="onNotificationClick(notif)"
+           style="cursor: pointer;">
+           
         <div class="d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-3">
-            <!-- Icon Representation -->
+            <!-- Icon -->
             <div class="p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"
                  [ngClass]="{
                    'bg-success-subtle text-success': notif.type === 'SUCCESS',
@@ -74,31 +108,27 @@
               }"></i>
             </div>
             <div>
-              <!-- Display Title & Description -->
-              <h6 class="fw-bold text-dark mb-1">{{ notif.title || 'System Event' }}</h6>
+              <h5 class="fw-bold text-dark mb-1">{{ notif.title || 'System Event' }}</h5>
               <p class="mb-0 text-secondary small">{{ notif.message }}</p>
               
               <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                <!-- Timestamp -->
                 <small class="text-muted" style="font-size: 11px;">
                   <i class="bi bi-clock me-1"></i> {{ notif.createdAt.substring(0, 16).replace('T', ' ') }}
                 </small>
                 
-                <!-- Category Badge -->
                 <span class="badge bg-light text-secondary border fw-normal" style="font-size: 10px; letter-spacing: 0.3px;">
                   {{ notif.category }}
                 </span>
 
-                <!-- Status Level Colored Badge -->
                 <span class="badge" [ngClass]="{
                   'bg-success-subtle text-success': notif.color === 'GREEN',
                   'bg-warning-subtle text-warning': notif.color === 'YELLOW',
-                  'bg-danger-subtle text-danger': notif.color === 'RED'
+                  'bg-danger-subtle text-danger': notif.color === 'RED',
+                  'bg-info-subtle text-info': notif.color === 'BLUE'
                 }" style="font-size: 10px;">
                   Status: {{ notif.statusLevel }}
                 </span>
 
-                <!-- Priority Badge -->
                 <span class="badge bg-dark-subtle text-dark" style="font-size: 10px;">
                   Priority: {{ notif.priority }}
                 </span>
@@ -108,8 +138,8 @@
           
           <div class="d-flex align-items-center gap-3">
             <span *ngIf="!notif.readStatus" class="badge bg-danger rounded-pill">New</span>
-            <!-- Individual Delete Button -->
-            <button (click)="deleteNotification(notif.id!)" class="btn btn-link text-danger p-1 border-0" title="Delete Log">
+            <!-- Stop propagation prevents clicking delete from firing row redirect [1.2.6] -->
+            <button (click)="$event.stopPropagation(); deleteNotification(notif.id!)" class="btn btn-link text-danger p-1 border-0" title="Delete Log">
               <i class="bi bi-trash fs-5"></i>
             </button>
           </div>
