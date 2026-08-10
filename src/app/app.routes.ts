@@ -14,6 +14,7 @@ import { ClientListComponent } from './components/client-list/client-list';
 import { ProfileComponent } from './components/profile/profile'; // Import this [1.2.1]
 import { ContractDetailComponent } from './components/contract-detail/contract-detail'; // Import this
 import { SettingsComponent } from './components/settings/settings'; // Import this [1.2.1]
+import { AnalyticsComponent } from './components/analytics/analytics';
 
 
 export const routes: Routes = [
@@ -44,5 +45,8 @@ export const routes: Routes = [
   { path: 'profile', component: ProfileComponent },
   
   // Settings pathways [1.2.1]
-  { path: 'settings', component: SettingsComponent } // Register the settings path// Register the profile path
+  { path: 'settings', component: SettingsComponent }, // Register the settings path// Register the profile path
+
+  // Analytics pathway
+  { path: 'analytics', component: AnalyticsComponent }
 ];

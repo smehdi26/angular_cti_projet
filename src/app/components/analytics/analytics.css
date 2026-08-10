@@ -1,0 +1,17 @@
+.card {
+    border-radius: 12px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+h3 {
+    letter-spacing: -0.5px;
+}
+
+.border-primary { border-color: #4f46e5 !important; }
+.border-success { border-color: #10b981 !important; }
+.border-warning { border-color: #f59e0b !important; }
+.border-info { border-color: #06b6d4 !important; }

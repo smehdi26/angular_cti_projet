@@ -1,0 +1,141 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Operational Analytics</h3>
+      <p class="text-muted mb-0">Real-time performance metrics and business distribution</p>
+    </div>
+    <button (click)="loadData()" class="btn btn-light border d-flex align-items-center gap-2">
+      <i class="bi bi-arrow-clockwise"></i> Refresh Data
+    </button>
+  </div>
+
+  <div *ngIf="!loading; else loader">
+    
+    <!-- KPI Summary Row -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card p-3 border-0 shadow-sm bg-white border-start border-primary border-4">
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Execution Rate</small>
+          <h3 class="fw-bold mb-0 text-primary">{{ stats.executionRate.percentage }}%</h3>
+          <p class="text-muted small mb-0">{{ stats.executionRate.completed }} / {{ stats.executionRate.total }} visits</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 border-0 shadow-sm bg-white border-start border-success border-4">
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Major Sector</small>
+          <h3 class="fw-bold mb-0 text-success">{{ sectorPieOptions.labels[0] || 'N/A' }}</h3>
+          <p class="text-muted small mb-0">Most active industry</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 border-0 shadow-sm bg-white border-start border-warning border-4">
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Pending Meetings</small>
+          <h3 class="fw-bold mb-0 text-warning">{{ stats.reservationStatus['UNTREATED'] || 0 }}</h3>
+          <p class="text-muted small mb-0">Awaiting technician action</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card p-3 border-0 shadow-sm bg-white border-start border-info border-4">
+          <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Top Region</small>
+          <h3 class="fw-bold mb-0 text-info">{{ cityTreemapOptions.series[0].data[0]?.x || 'N/A' }}</h3>
+          <p class="text-muted small mb-0">Highest client density</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Charts Grid -->
+    <div class="row g-4 mb-4">
+      <!-- Maintenance Execution -->
+      <div class="col-lg-4">
+        <div class="card p-4 border-0 shadow-sm h-100 bg-white">
+          <h6 class="fw-bold mb-4">Maintenance Completion</h6>
+          <apx-chart
+            [series]="executionRadialOptions.series"
+            [chart]="executionRadialOptions.chart"
+            [plotOptions]="executionRadialOptions.plotOptions"
+            [labels]="executionRadialOptions.labels"
+            [colors]="executionRadialOptions.colors">
+          </apx-chart>
+        </div>
+      </div>
+
+      <!-- Tech Workload -->
+      <div class="col-lg-8">
+        <div class="card p-4 border-0 shadow-sm h-100 bg-white">
+          <apx-chart
+            [series]="techWorkloadOptions.series"
+            [chart]="techWorkloadOptions.chart"
+            [xaxis]="techWorkloadOptions.xaxis"
+            [plotOptions]="techWorkloadOptions.plotOptions"
+            [title]="techWorkloadOptions.title"
+            [colors]="techWorkloadOptions.colors">
+          </apx-chart>
+        </div>
+      </div>
+
+      <!-- Sector Distribution -->
+      <div class="col-lg-4">
+        <div class="card p-4 border-0 shadow-sm bg-white">
+          <h6 class="fw-bold mb-4">Business Sectors</h6>
+          <apx-chart
+            [series]="sectorPieOptions.series"
+            [chart]="sectorPieOptions.chart"
+            [labels]="sectorPieOptions.labels"
+            [colors]="sectorPieOptions.colors"
+            [legend]="sectorPieOptions.legend">
+          </apx-chart>
+        </div>
+      </div>
+
+      <!-- Region Treemap -->
+      <div class="col-lg-8">
+        <div class="card p-4 border-0 shadow-sm bg-white">
+          <apx-chart
+            [series]="cityTreemapOptions.series"
+            [chart]="cityTreemapOptions.chart"
+            [title]="cityTreemapOptions.title"
+            [colors]="cityTreemapOptions.colors">
+          </apx-chart>
+        </div>
+      </div>
+
+      <!-- Contract & Status Row -->
+      <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm bg-white">
+          <h6 class="fw-bold mb-4">Contract Redevance Split</h6>
+          <apx-chart
+            [series]="contractBarOptions.series"
+            [chart]="contractBarOptions.chart"
+            [xaxis]="contractBarOptions.xaxis"
+            [plotOptions]="contractBarOptions.plotOptions"
+            [colors]="contractBarOptions.colors">
+          </apx-chart>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card p-4 border-0 shadow-sm bg-white">
+          <h6 class="fw-bold mb-4">Meeting Status Mix</h6>
+          <apx-chart
+            [series]="statusDonutOptions.series"
+            [chart]="statusDonutOptions.chart"
+            [labels]="statusDonutOptions.labels"
+            [colors]="statusDonutOptions.colors"
+            [plotOptions]="statusDonutOptions.plotOptions"
+            [legend]="statusDonutOptions.legend">
+          </apx-chart>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <ng-template #loader>
+    <div class="d-flex flex-column align-items-center justify-content-center py-5">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <p class="text-muted">Calculating business intelligence metrics...</p>
+    </div>
+  </ng-template>
+</div>
