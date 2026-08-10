@@ -2,85 +2,80 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { NgApexchartsModule } from "ng-apexcharts"; // Added for the chart
 import { ClientService, Client } from '../../services/client';
 import { ReservationService, Reservation } from '../../services/reservation';
 import { NotificationService, NotificationLog } from '../../services/notification';
+import { AnalyticsService } from '../../services/analytics'; // To get chart data
 
 declare var bootstrap: any;
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, NgApexchartsModule],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
-
   totalClientsCount: number = 0;
   totalPhones: number = 0;
   todayReservationsCount: number = 0;
 
-  // Highlights Previews
+  // Data Lists
   todayMeetings: any[] = [];
   recentActivities: NotificationLog[] = [];
   recentClients: Client[] = [];
   upcomingAlerts: Reservation[] = [];
 
+  // Chart Properties
+  public chartOptions: any;
+
   constructor(
     private clientService: ClientService,
     private reservationService: ReservationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private analyticsService: AnalyticsService
   ) { }
 
   ngOnInit(): void {
     this.loadClientsData();
     this.loadNotificationMetrics();
     this.loadSchedulerHighlights();
+    this.loadDashboardChart(); // Added
   }
 
   loadClientsData(): void {
     this.clientService.getClients().subscribe({
       next: (data: Client[]) => {
         this.totalClientsCount = data.length;
-        
-        // Retrieve the last 3 registered clients
         this.recentClients = data.slice(-3).reverse();
-
-        this.totalPhones = data.reduce((acc, client) => {
-          return acc + (client.phones ? client.phones.length : 0);
-        }, 0);
+        this.totalPhones = data.reduce((acc, client) => acc + (client.phones ? client.phones.length : 0), 0);
       },
       error: (err: any) => console.error(err)
     });
   }
 
   loadNotificationMetrics(): void {
-    // 1. Get today's total active reservation count
     this.reservationService.getTodayCount().subscribe({
       next: (count: number) => {
         this.todayReservationsCount = count;
         this.triggerDailySummaryModal();
-      },
-      error: (err: any) => console.error(err)
+      }
     });
 
-    // 2. Get active bookings starting within 1 hour
     this.reservationService.getUpcomingAlerts().subscribe({
       next: (alerts: Reservation[]) => {
         this.upcomingAlerts = alerts.filter(alert => 
           localStorage.getItem('acknowledged_alert_' + alert.id) !== 'true'
         );
-      },
-      error: (err: any) => console.error(err)
+      }
     });
 
-    // 3. Load latest 5 system activity logs
     this.notificationService.getNotifications().subscribe({
       next: (data: NotificationLog[]) => {
-        this.recentActivities = data.slice(0, 5); // Take the top 5
-      },
-      error: (err: any) => console.error(err)
+        this.recentActivities = data.slice(0, 5);
+      }
     });
   }
 
@@ -88,10 +83,23 @@ export class DashboardComponent implements OnInit {
     const todayStr = new Date().toISOString().split('T')[0];
     this.reservationService.getSlots(todayStr).subscribe({
       next: (slots) => {
-        // Filter out occupied intervals to show today's timeline activity
         this.todayMeetings = slots.filter(s => s.booked);
-      },
-      error: (err: any) => console.error(err)
+      }
+    });
+  }
+
+  // Added: Visual Chart for the Dashboard
+  loadDashboardChart(): void {
+    this.analyticsService.getStats().subscribe(data => {
+      this.chartOptions = {
+        series: Object.values(data.reservationStatus),
+        chart: { type: "donut", height: 220 },
+        labels: Object.keys(data.reservationStatus),
+        colors: ['#f59e0b', '#4f46e5', '#10b981', '#ef4444'],
+        legend: { position: 'bottom', fontSize: '12px' },
+        dataLabels: { enabled: false },
+        plotOptions: { pie: { donut: { size: '70%' } } }
+      };
     });
   }
 
@@ -100,21 +108,17 @@ export class DashboardComponent implements OnInit {
     const todayDate = new Date().toISOString().split('T')[0];
     const acknowledged = JSON.parse(localStorage.getItem('lastAcknowledgedDailySummary') || 'null');
 
-    if (todayCount > 0 && (!acknowledged || acknowledged.date !== todayDate || acknowledged.count !== todayCount)) {
+    if (todayCount > 0 && (!acknowledged || acknowledged.date !== todayDate)) {
       setTimeout(() => {
         const modalEl = document.getElementById('dailySummaryModal');
-        if (modalEl) {
-          const modal = new bootstrap.Modal(modalEl);
-          modal.show();
-        }
-      }, 100);
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+      }, 500);
     }
   }
 
   acknowledgeDailySummary(): void {
-    const todayDate = new Date().toISOString().split('T')[0];
     localStorage.setItem('lastAcknowledgedDailySummary', JSON.stringify({
-      date: todayDate,
+      date: new Date().toISOString().split('T')[0],
       count: this.todayReservationsCount
     }));
   }
@@ -125,9 +129,6 @@ export class DashboardComponent implements OnInit {
   }
 
   getPrimaryPhone(client: Client): string {
-    if (client.phones && client.phones.length > 0) {
-      return client.phones[0].phoneNumber;
-    }
-    return '00000000';
+    return (client.phones && client.phones.length > 0) ? client.phones[0].phoneNumber : '00000000';
   }
 }

@@ -1,14 +1,22 @@
 <div class="container-fluid py-4">
-  <!-- Greeting -->
-  <div class="mb-4 pb-2">
-    <h3 class="fw-bold text-dark mb-1">Workspace Overview</h3>
-    <p class="text-muted mb-0">High-level insights, active meetings timeline, and recent directory logs</p>
+  <!-- Header with Quick Action -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Command Center</h3>
+      <p class="text-muted mb-0">High-level insights and real-time operational activity</p>
+    </div>
+    <div class="no-print">
+      <a [routerLink]="['/reservations/schedule']" class="btn btn-primary shadow-sm btn-sm px-3 d-flex align-items-center gap-2">
+        <i class="bi bi-calendar-plus"></i> Quick Book Meeting
+      </a>
+    </div>
   </div>
 
-  <!-- KPI Metrics -->
+  <!-- KPI Metrics Row -->
   <div class="row g-4 mb-4">
+    <!-- Total Clients -->
     <div class="col-md-4">
-      <div class="card p-4 bg-white shadow-sm border-0">
+      <div class="card p-4 bg-white shadow-sm border-0 border-start border-primary border-4">
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Client Profiles</span>
@@ -20,8 +28,10 @@
         </div>
       </div>
     </div>
+
+    <!-- Total Active Lines -->
     <div class="col-md-4">
-      <div class="card p-4 bg-white shadow-sm border-0">
+      <div class="card p-4 bg-white shadow-sm border-0 border-start border-success border-4">
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Total Active Lines</span>
@@ -33,12 +43,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Today's Meetings -->
     <div class="col-md-4">
-      <div class="card p-4 bg-white shadow-sm border-0">
+      <div class="card p-4 bg-white shadow-sm border-0 border-start border-warning border-4">
         <div class="d-flex align-items-center justify-content-between">
           <div>
             <span class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Today's Meetings</span>
-            <h2 class="fw-bold text-dark mt-2 mb-0">{{ todayReservationsCount }}</h2>
+            <h2 class="fw-bold text-dark mt-2 mb-0 text-warning">{{ todayReservationsCount }}</h2>
           </div>
           <div class="bg-warning-subtle p-3 rounded text-warning">
             <i class="bi bi-calendar3 fs-3"></i>
@@ -48,142 +60,156 @@
     </div>
   </div>
 
-  <!-- Dual Grid Workspace -->
+  <!-- Middle Grid: Timeline, Status Chart, and System Logs -->
   <div class="row g-4 mb-4">
-    <!-- Left Panel: Today's Meetings Timeline -->
-    <div class="col-lg-6">
+    
+    <!-- Column 1: Today's Timeline (Original Logic) -->
+    <div class="col-lg-4">
       <div class="card p-4 h-100 border-0 shadow-sm bg-white">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-check text-primary me-2"></i> Today's Schedule</h5>
-          <a [routerLink]="['/reservations']" class="text-decoration-none small">Schedule Workspace <i class="bi bi-arrow-right"></i></a>
+          <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i> Today's Schedule</h6>
+          <a [routerLink]="['/reservations']" class="text-decoration-none small">Workspace <i class="bi bi-arrow-right"></i></a>
         </div>
 
-        <div class="d-flex flex-column gap-2">
+        <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 320px;">
           @for (meeting of todayMeetings; track meeting.time) {
             <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
               <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-primary text-white" style="font-size: 14px;">{{ meeting.time }}</span>
-                <div>
-                  <h6 class="fw-bold mb-0 text-dark">{{ meeting.clientName }}</h6>
-                  <small class="text-muted" *ngIf="meeting.description">Notes: {{ meeting.description }}</small>
+                <span class="badge bg-primary text-white" style="font-size: 12px;">{{ meeting.time }}</span>
+                <div class="overflow-hidden">
+                  <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 13px;">{{ meeting.clientName }}</h6>
+                  <small class="text-muted text-truncate d-block" style="font-size: 11px;">{{ meeting.description || 'General Meeting' }}</small>
                 </div>
               </div>
-              <span class="badge bg-success-subtle text-success">Reserved</span>
             </div>
           } @empty {
             <div class="text-center text-muted py-5">
               <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
-              No meetings scheduled for today.
+              No meetings today.
             </div>
           }
         </div>
       </div>
     </div>
 
-    <!-- Right Panel: Recent System Logs -->
-    <div class="col-lg-6">
+    <!-- Column 2: Status Overview Chart (Upgrade) -->
+    <div class="col-lg-4">
+        <div class="card p-4 h-100 border-0 shadow-sm bg-white">
+            <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-pie-chart text-primary me-2"></i> Workload Distribution</h6>
+            <div *ngIf="chartOptions" class="mt-auto mb-auto">
+                <apx-chart
+                    [series]="chartOptions.series"
+                    [chart]="chartOptions.chart"
+                    [labels]="chartOptions.labels"
+                    [colors]="chartOptions.colors"
+                    [legend]="chartOptions.legend"
+                    [plotOptions]="chartOptions.plotOptions"
+                    [dataLabels]="chartOptions.dataLabels">
+                </apx-chart>
+            </div>
+            <div *ngIf="!chartOptions" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm me-2"></div> Calculating workload...
+            </div>
+        </div>
+    </div>
+
+    <!-- Column 3: Recent System Logs (Original Logic) -->
+    <div class="col-lg-4">
       <div class="card p-4 h-100 border-0 shadow-sm bg-white">
         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i> Recent Activities</h5>
-          <a [routerLink]="['/notifications']" class="text-decoration-none small">Notifications Log <i class="bi bi-arrow-right"></i></a>
+          <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-lightning-charge text-primary me-2"></i> Activity Log</h6>
+          <a [routerLink]="['/notifications']" class="text-decoration-none small">All Logs</a>
         </div>
 
         <div class="d-flex flex-column gap-3">
           @for (notif of recentActivities; track notif.id) {
             <div class="d-flex align-items-start gap-3">
-              <div class="p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 38px;"
-                   [ngClass]="{
-                     'bg-success-subtle text-success': notif.type === 'SUCCESS',
-                     'bg-danger-subtle text-danger': notif.type === 'DANGER',
-                     'bg-warning-subtle text-warning': notif.type === 'WARNING',
-                     'bg-primary-subtle text-primary': notif.type === 'INFO'
-                   }">
+              <div class="p-1 rounded-circle d-flex align-items-center justify-content-center">
                 <i class="bi fs-6" [ngClass]="{
-                  'bi-check-circle-fill': notif.type === 'SUCCESS',
-                  'bi-x-circle-fill': notif.type === 'DANGER',
-                  'bi-exclamation-triangle-fill': notif.type === 'WARNING',
-                  'bi-info-circle-fill': notif.type === 'INFO'
+                  'bi-check-circle-fill text-success': notif.type === 'SUCCESS',
+                  'bi-x-circle-fill text-danger': notif.type === 'DANGER',
+                  'bi-exclamation-triangle-fill text-warning': notif.type === 'WARNING',
+                  'bi-info-circle-fill text-primary': notif.type === 'INFO'
                 }"></i>
               </div>
-              <div>
-                <p class="mb-0 text-dark small" style="font-weight: 500;">{{ notif.message }}</p>
-                <small class="text-muted" style="font-size: 11px;">{{ notif.createdAt.substring(11, 16) }}</small>
+              <div class="overflow-hidden border-bottom pb-2 w-100">
+                <p class="mb-0 text-dark small fw-medium text-truncate" style="font-size: 12px;">{{ notif.message }}</p>
+                <small class="text-muted" style="font-size: 10px;">{{ notif.createdAt.substring(11, 16) }}</small>
               </div>
             </div>
           } @empty {
             <div class="text-center text-muted py-5">
               <i class="bi bi-bell-slash fs-2 mb-2 d-block text-muted"></i>
-              No administrative activities logged.
+              No recent activity.
             </div>
           }
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Bottom Panel: Newest Registered Clients -->
+  <!-- Bottom Panel: Newest Registered Clients (Original Logic) -->
   <div class="card p-4 border-0 shadow-sm bg-white mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
       <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-person-check text-primary me-2"></i> Newest Client Registrations</h5>
-      <a [routerLink]="['/clients']" class="text-decoration-none small">Clients Directory <i class="bi bi-arrow-right"></i></a>
+      <a [routerLink]="['/clients']" class="text-decoration-none small">Directory <i class="bi bi-arrow-right"></i></a>
     </div>
 
     <div class="row g-3">
       @for (client of recentClients; track client.id) {
         <div class="col-md-4">
-          <div class="card p-3 border shadow-sm h-100 bg-white d-flex flex-column justify-content-between">
+          <div class="card p-3 border shadow-none bg-light-subtle h-100 d-flex flex-column justify-content-between">
             <div>
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ client.clientCode }}</span>
-                <span *ngIf="client.sector" class="badge bg-light text-secondary border" style="font-size: 10px;">{{ client.sector.name }}</span>
+                <span *ngIf="client.sector" class="badge bg-white text-secondary border" style="font-size: 10px;">{{ client.sector.name }}</span>
               </div>
               <h6 class="fw-bold text-dark mb-1">{{ client.name }}</h6>
-              <span class="text-muted small d-block mb-3">{{ client.email }}</span>
+              <span class="text-muted small d-block mb-3 text-truncate">{{ client.email }}</span>
             </div>
-            <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-sm btn-outline-primary w-100 rounded-2">View Profile</a>
+            <a [routerLink]="['/clients', getPrimaryPhone(client)]" class="btn btn-sm btn-outline-primary w-100 rounded-2 py-1">View Profile</a>
           </div>
         </div>
       } @empty {
         <div class="col-12 text-center text-muted py-4">
-          <i class="bi bi-person-x fs-2 mb-2 d-block"></i>No client files created yet.
+          <i class="bi bi-person-x fs-2 mb-2 d-block"></i>No client files found.
         </div>
       }
     </div>
   </div>
 </div>
 
-<!-- Daily Agenda Summary Modal -->
-@if (todayReservationsCount > 0) {
-  <div class="modal fade" id="dailySummaryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content shadow border-0 rounded-4">
-        <div class="modal-header bg-primary text-white border-0 py-3">
-          <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check-fill me-2"></i> Daily Agenda Summary</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Daily Agenda Summary Modal (Original Logic) -->
+<div class="modal fade" id="dailySummaryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow border-0 rounded-4">
+      <div class="modal-header bg-primary text-white border-0 py-3">
+        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-check-fill me-2"></i> Daily Agenda Summary</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+          <i class="bi bi-bell-fill fs-3"></i>
         </div>
-        <div class="modal-body text-center p-4">
-          <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-            <i class="bi bi-bell-fill fs-3"></i>
-          </div>
-          <h5 class="fw-bold mb-2">Good Day Admin,</h5>
-          <p class="text-muted fs-5 mb-0">You have <strong class="text-primary">{{ todayReservationsCount }}</strong> active reservations scheduled for today.</p>
-        </div>
-        <div class="modal-footer border-0 pb-4 justify-content-center">
-          <button type="button" id="acknowledge-btn" (click)="acknowledgeDailySummary()" class="btn btn-primary px-4 rounded-3" data-bs-dismiss="modal">Acknowledge</button>
-        </div>
+        <h5 class="fw-bold mb-2">Good Day Admin,</h5>
+        <p class="text-muted fs-5 mb-0">You have <strong class="text-primary">{{ todayReservationsCount }}</strong> active reservations scheduled for today.</p>
+      </div>
+      <div class="modal-footer border-0 pb-4 justify-content-center">
+        <button type="button" id="acknowledge-btn" (click)="acknowledgeDailySummary()" class="btn btn-primary px-4 rounded-3" data-bs-dismiss="modal">Acknowledge</button>
       </div>
     </div>
   </div>
-}
+</div>
 
-<!-- Upcoming 1-Hour Alert Toast Container -->
+<!-- Upcoming 1-Hour Alert Toast Container (Original Logic) -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050; margin-top: 60px;">
   @for (alert of upcomingAlerts; track alert.id) {
-    <div class="toast show border-0 shadow-lg rounded-3 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast show border-0 shadow-lg rounded-3 mb-2" role="alert">
       <div class="toast-header bg-warning text-dark border-0">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <strong class="me-auto">Action Required</strong>
-        <button type="button" class="btn-close" (click)="acknowledgeAlert(alert.id!)" aria-label="Close"></button>
+        <button type="button" class="btn-close" (click)="acknowledgeAlert(alert.id!)"></button>
       </div>
       <div class="toast-body bg-white rounded-bottom-3 p-3">
         <p class="mb-3">
