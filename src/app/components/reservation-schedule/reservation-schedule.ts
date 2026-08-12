@@ -34,27 +34,31 @@ export class ReservationScheduleComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const today = new Date();
-    this.selectedDate = today.toISOString().split('T')[0];
+  const today = new Date();
+  this.selectedDate = today.toISOString().split('T')[0];
 
-    const qParams = this.route.snapshot.queryParams;
-    if (qParams['date']) {
-      this.selectedDate = qParams['date'];
-    }
-
-    this.bookingForm = this.fb.group({
-      name: ['', [Validators.required]],
-      date: [this.selectedDate, [Validators.required]],
-      time: ['', [Validators.required]],
-      clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
-      technicianId: ['', [Validators.required]],
-      description: [qParams['description'] || '']
-    });
-
-    this.loadSlots();
-    this.loadClients();
-    this.loadTechnicians();
+  // 1. Capture query parameters
+  const qParams = this.route.snapshot.queryParams;
+  
+  if (qParams['date']) {
+    this.selectedDate = qParams['date'];
   }
+
+  // 2. Initialize form and PRE-FILL clientId if it exists in the URL
+  this.bookingForm = this.fb.group({
+    name: ['', [Validators.required]],
+    date: [this.selectedDate, [Validators.required]],
+    time: ['', [Validators.required]],
+    // This line handles the auto-fill from the query parameter
+    clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
+    technicianId: ['', [Validators.required]],
+    description: [qParams['description'] || '']
+  });
+
+  this.loadSlots();
+  this.loadClients();
+  this.loadTechnicians();
+}
 
   loadSlots(): void {
     this.reservationService.getSlots(this.selectedDate).subscribe({
