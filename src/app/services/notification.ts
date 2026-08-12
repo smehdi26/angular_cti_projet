@@ -61,4 +61,10 @@ export class NotificationService {
       tap(() => this.updateUnreadCount()) // Sync global sidebar badge [1.2.6]
     );
   }
+
+  markAsRead(id: number): Observable<void> {
+  return this.http.put<void>(`${this.apiUrl}/${id}/read`, {}).pipe(
+    tap(() => this.updateUnreadCount())
+  );
+}
 }

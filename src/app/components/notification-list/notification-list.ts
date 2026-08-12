@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Required for inputs mapping
-import { Router } from '@angular/router'; // Import Router [1.2.1]
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NotificationService, NotificationLog } from '../../services/notification';
 
 @Component({
@@ -16,26 +16,29 @@ export class NotificationListComponent implements OnInit {
   notifications: NotificationLog[] = [];
   filteredNotifications: NotificationLog[] = [];
   
+  // Chronological Grouping State
+  groupedNotifications: { [key: string]: NotificationLog[] } = {};
+  bucketKeys = ['Today', 'Yesterday', 'This Month', 'Last Month', 'Older'];
+
   // Search & Filter Properties
   searchTerm: string = '';
-  activeFilter: string = 'ALL'; // ALL | SUCCESS | WARNING | INFO
-  activeCategory: string = 'ALL'; // ALL | CLIENT | CONTRACT | RESERVATION | USER
+  activeFilter: string = 'ALL';
+  activeCategory: string = 'ALL';
 
-  // Dynamic Date Range & Sorting Properties [1.1.4, 1.2.6]
-  startDate: string = ''; // Minimum date picker (YYYY-MM-DD)
-  endDate: string = '';   // Maximum date picker (YYYY-MM-DD)
-  sortOrder: string = 'desc'; // 'desc' (Newest first) | 'asc' (Oldest first)
+  // Date Range & Sorting
+  startDate: string = '';
+  endDate: string = '';
+  sortOrder: string = 'desc';
 
   constructor(
     private notificationService: NotificationService,
-    private router: Router // Inject Router [1.2.1]
+    private router: Router
   ) { }
 
   ngOnInit(): void {
     this.loadNotifications();
   }
 
-  // Local getter that calculates remaining unread logs safely [1.2.6]
   get unreadCount(): number {
     return this.notifications.filter(n => !n.readStatus).length;
   }
@@ -47,28 +50,22 @@ export class NotificationListComponent implements OnInit {
         this.applySearchAndFilter();
         this.notificationService.updateUnreadCount();
       },
-      error: (err: any) => {
-        console.error('Failed to load notifications list', err);
-      }
+      error: (err: any) => console.error('Failed to load notifications', err)
     });
   }
 
-  // Intersects all search keywords, severity levels, domains, date ranges, and sorting parameters [1.2.6]
   applySearchAndFilter(): void {
     const term = this.searchTerm.toLowerCase().trim();
-    let temp = this.notifications;
+    let temp = [...this.notifications];
 
-    // 1. Filter by Severity Level
     if (this.activeFilter !== 'ALL') {
-      temp = this.notifications.filter(n => n.type === this.activeFilter || (this.activeFilter === 'WARNING' && n.type === 'DANGER'));
+      temp = temp.filter(n => n.type === this.activeFilter || (this.activeFilter === 'WARNING' && n.type === 'DANGER'));
     }
 
-    // 2. Filter by Domain Category
     if (this.activeCategory !== 'ALL') {
-      temp = this.notifications.filter(n => n.category === this.activeCategory);
+      temp = temp.filter(n => n.category === this.activeCategory);
     }
 
-    // 3. Filter by Date Range (Min - Max) [1.2.6]
     if (this.startDate) {
       const startBoundary = new Date(this.startDate + 'T00:00:00');
       temp = temp.filter(n => new Date(n.createdAt) >= startBoundary);
@@ -78,12 +75,14 @@ export class NotificationListComponent implements OnInit {
       temp = temp.filter(n => new Date(n.createdAt) <= endBoundary);
     }
 
-    // 4. Filter by Search Keyword
     if (term) {
-      temp = temp.filter(n => n.message.toLowerCase().includes(term));
+      temp = temp.filter(n => 
+        n.message.toLowerCase().includes(term) || 
+        (n.title && n.title.toLowerCase().includes(term))
+      );
     }
 
-    // 5. Apply Chronological Sorting (Newest vs Oldest) [1.1.4, 1.2.6]
+    // Chronological Sort
     temp.sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime();
       const timeB = new Date(b.createdAt).getTime();
@@ -91,6 +90,39 @@ export class NotificationListComponent implements OnInit {
     });
 
     this.filteredNotifications = temp;
+    this.groupedNotifications = this.groupNotifications(temp);
+  }
+
+  groupNotifications(notifs: NotificationLog[]) {
+    const groups: { [key: string]: NotificationLog[] } = {
+      'Today': [], 'Yesterday': [], 'This Month': [], 'Last Month': [], 'Older': []
+    };
+
+    const now = new Date();
+    const todayStr = now.toDateString();
+    
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+
+    notifs.forEach(n => {
+      const d = new Date(n.createdAt);
+      const dateStr = d.toDateString();
+
+      if (dateStr === todayStr) {
+        groups['Today'].push(n);
+      } else if (dateStr === yesterdayStr) {
+        groups['Yesterday'].push(n);
+      } else if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+        groups['This Month'].push(n);
+      } else if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() - 1) {
+        groups['Last Month'].push(n);
+      } else {
+        groups['Older'].push(n);
+      }
+    });
+
+    return groups;
   }
 
   changeFilter(filterType: string): void {
@@ -105,7 +137,7 @@ export class NotificationListComponent implements OnInit {
 
   toggleSort(): void {
     this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
-    this.applySearchAndFilter(); // Re-sort instantly [1.1.4, 1.2.6]
+    this.applySearchAndFilter();
   }
 
   resetFilters(): void {
@@ -114,32 +146,67 @@ export class NotificationListComponent implements OnInit {
     this.activeCategory = 'ALL';
     this.startDate = '';
     this.endDate = '';
-    this.sortOrder = 'desc'; // Reset back to default newest first
+    this.sortOrder = 'desc';
     this.applySearchAndFilter();
   }
 
-  // Interactive Redirection Engine [1.2.1, 1.2.6]
+  /**
+   * Action: Mark as Read & Navigate
+   * When clicked, if it's unread, we update it via service first.
+   */
   onNotificationClick(notif: NotificationLog): void {
+  if (!notif.id) return;
+
+  if (!notif.readStatus) {
+    // 1. Mark as read in the backend
+    this.notificationService.markAsRead(notif.id).subscribe({
+      next: () => {
+        // 2. Update the local property
+        notif.readStatus = true;
+
+        // 3. Update the sidebar count badge
+        this.notificationService.updateUnreadCount();
+
+        // 4. IMPORTANT: Re-run the grouping logic to force the UI to refresh the "New" badge
+        this.groupedNotifications = this.groupNotifications(this.filteredNotifications);
+
+        // 5. Navigate to the target page
+        this.navigateToTarget(notif);
+      },
+      error: (err) => {
+        console.error('Failed to mark as read', err);
+        this.navigateToTarget(notif); // Navigate anyway
+      }
+    });
+  } else {
+    this.navigateToTarget(notif);
+  }
+}
+
+  /**
+   * Private Helper: Handles Redirection Logic
+   */
+  private navigateToTarget(notif: NotificationLog): void {
     if (notif.category === 'CLIENT' && notif.clientPhone) {
-      this.router.navigate(['/clients', notif.clientPhone]); // Redirect to Client Profile [1.2.1]
+      this.router.navigate(['/clients', notif.clientPhone]);
     } else if (notif.category === 'CONTRACT' && notif.contractId) {
-      this.router.navigate(['/contracts', notif.contractId]); // Redirect to Contract Details [1.2.1]
+      this.router.navigate(['/contracts', notif.contractId]);
     } else if (notif.category === 'RESERVATION') {
-      this.router.navigate(['/reservations']); // Redirect to Reservations Directory [1.2.1]
+      this.router.navigate(['/reservations']);
     }
   }
 
   markAllAsRead(): void {
     this.notificationService.markAllAsRead().subscribe({
-      next: () => this.loadNotifications(),
-      error: (err: any) => console.error(err)
+      next: () => this.loadNotifications()
     });
   }
 
   deleteNotification(id: number): void {
-    this.notificationService.deleteNotification(id).subscribe({
-      next: () => this.loadNotifications(),
-      error: (err: any) => console.error(err)
-    });
+    if (confirm('Are you sure you want to permanently delete this notification log?')) {
+      this.notificationService.deleteNotification(id).subscribe({
+        next: () => this.loadNotifications()
+      });
+    }
   }
 }
