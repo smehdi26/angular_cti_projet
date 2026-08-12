@@ -2,8 +2,17 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 
+// Unified User Interface
+export interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'ROLE_ADMIN' | 'ROLE_HR' | 'ROLE_TECHNICIAN';
+}
+
 export interface LoginRequest {
-  username: string;
+  username: string; // backend maps email to username
   password: string;
 }
 
@@ -13,7 +22,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   confirmPassword: string;
-  role: string; // Added field
+  role: string; 
 }
 
 @Injectable({
@@ -23,13 +32,13 @@ export class AuthService {
 
   private apiUrl = 'http://localhost:8090/api/auth';
 
-  // Reactive state manager for the active admin profile card [1.2.6]
-  private currentUserSubject = new BehaviorSubject<any>(this.getCurrentUserFromStorage());
+  // Reactive state manager for the active profile card in the sidebar
+  private currentUserSubject = new BehaviorSubject<User | null>(this.getCurrentUserFromStorage());
   currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
-  private getCurrentUserFromStorage(): any {
+  private getCurrentUserFromStorage(): User | null {
     const userJson = localStorage.getItem('currentUser');
     return userJson ? JSON.parse(userJson) : null;
   }
@@ -38,11 +47,11 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/register`, req);
   }
 
-  login(req: LoginRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, req).pipe(
-      tap((res: any) => {
-        localStorage.setItem('currentUser', JSON.stringify(res));
-        this.updateCurrentUserInSidebar(); // Broadcast successful login
+  login(req: LoginRequest): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/login`, req).pipe(
+      tap((user: User) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.updateCurrentUserInSidebar(); // Refresh global UI
       })
     );
   }
@@ -50,29 +59,29 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('lastAcknowledgedDailySummary');
-    this.currentUserSubject.next(null); // Clear active broadcast
+    this.currentUserSubject.next(null); // Clear broadcast
   }
 
   isLoggedIn(): boolean {
     return localStorage.getItem('currentUser') !== null;
   }
 
-  // GET active profile details from Spring
-  getProfile(email: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/profile`, { params: { email } });
+  // GET active user details from Spring
+  getProfile(email: string): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/profile`, { params: { email } });
   }
 
   // PUT update profile details
-  updateProfile(existingEmail: string, req: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/profile`, req, { params: { existingEmail } }).pipe(
-      tap((res: any) => {
-        localStorage.setItem('currentUser', JSON.stringify(res));
-        this.updateCurrentUserInSidebar(); // Broadcast updated details instantly [1.2.6]
+  updateProfile(existingEmail: string, req: any): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/profile`, req, { params: { existingEmail } }).pipe(
+      tap((updatedUser: User) => {
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        this.updateCurrentUserInSidebar(); // Refresh UI instantly
       })
     );
   }
 
-  // Broadcasts the fresh session storage details globally [1.2.6]
+  // Broadcasts the fresh storage details globally
   updateCurrentUserInSidebar(): void {
     this.currentUserSubject.next(this.getCurrentUserFromStorage());
   }
