@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
-import { AuthService } from './services/auth';
+import { AuthService, User } from './services/auth';
 import { NotificationService } from './services/notification';
 
 @Component({
@@ -15,45 +15,42 @@ import { NotificationService } from './services/notification';
 export class AppComponent implements OnInit {
   currentUrl: string = '';
   unreadCount: number = 0;
-  currentUser: any = null; // Reactive property bound to the global sidebar footer card
+  currentUser: User | null = null;
+  initialized: boolean = false; // Prevents "401 wall" on startup
 
   constructor(
     private router: Router, 
     private authService: AuthService,
     private notificationService: NotificationService
   ) {
-    // Track active route changes to handle sidebar rendering dynamically [1.2.1]
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl = event.url;
-      this.loadCurrentUser(); // Keep current user data state refreshed on navigation
     });
   }
 
   ngOnInit(): void {
-    // 1. Subscribe to the reactive unread notification counter stream [1.2.6]
-    this.notificationService.unreadCount$.subscribe((count: number) => {
-      this.unreadCount = count;
-    });
-
-    // 2. Subscribe to the reactive session user profile stream [1.2.6]
-    this.authService.currentUser$.subscribe((user: any) => {
+    // 1. Listen for session changes
+    this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
 
-    // 3. Trigger initial queries on startup
-    this.notificationService.updateUnreadCount();
-    this.authService.updateCurrentUserInSidebar();
-  }
+    // 2. Ask backend "Who am I?" on every refresh
+    this.authService.getMe().subscribe({
+      next: (user) => {
+        this.initialized = true;
+        this.notificationService.updateUnreadCount();
+      },
+      error: () => {
+        this.initialized = true;
+        if (this.showSidebar()) {
+          this.router.navigate(['/login']);
+        }
+      }
+    });
 
-  loadCurrentUser(): void {
-    const userJson = localStorage.getItem('currentUser');
-    if (userJson) {
-      this.currentUser = JSON.parse(userJson);
-    } else {
-      this.currentUser = null;
-    }
+    this.notificationService.unreadCount$.subscribe(count => this.unreadCount = count);
   }
 
   showSidebar(): boolean {
@@ -64,7 +61,6 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
-    this.currentUser = null;
     this.router.navigate(['/login']);
   }
 }

@@ -32,26 +32,62 @@ export class AuthService {
 
   private apiUrl = 'http://localhost:8090/api/auth';
 
-  // Reactive state manager for the active profile card in the sidebar
+  // 1. Initialize the Subject. The 'getCurrentUserFromStorage' method handles the safety checks.
   private currentUserSubject = new BehaviorSubject<User | null>(this.getCurrentUserFromStorage());
   currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
+  /**
+   * BULLETPROOF STORAGE READER
+   * Prevents the app from crashing if 'undefined' or 'null' strings are stored.
+   */
   private getCurrentUserFromStorage(): User | null {
     const userJson = localStorage.getItem('currentUser');
-    return userJson ? JSON.parse(userJson) : null;
+
+    // Check for null, or the literal strings "undefined"/"null" that cause JSON.parse to crash
+    if (!userJson || userJson === 'undefined' || userJson === 'null') {
+      return null;
+    }
+
+    try {
+      return JSON.parse(userJson);
+    } catch (e) {
+      console.error("Malformed JSON in storage, clearing...", e);
+      localStorage.removeItem('currentUser');
+      return null;
+    }
   }
 
   register(req: RegisterRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/register`, req);
   }
 
+  /**
+   * LOGIN
+   * Refactored to handle the direct User object returned by your Spring Boot Controller.
+   * We use 'withCredentials: true' to ensure the session cookie is saved.
+   */
   login(req: LoginRequest): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/login`, req).pipe(
+    return this.http.post<User>(`${this.apiUrl}/login`, req, { withCredentials: true }).pipe(
       tap((user: User) => {
+        if (user && user.email) {
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        }
+      })
+    );
+  }
+
+  /**
+   * GET ME (Session Restoration)
+   * This is vital for Google Auth. After redirect, Angular calls this to see if the session is alive.
+   */
+  getMe(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`, { withCredentials: true }).pipe(
+      tap(user => {
         localStorage.setItem('currentUser', JSON.stringify(user));
-        this.updateCurrentUserInSidebar(); // Refresh global UI
+        this.currentUserSubject.next(user);
       })
     );
   }
@@ -59,29 +95,29 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('lastAcknowledgedDailySummary');
-    this.currentUserSubject.next(null); // Clear broadcast
+    this.currentUserSubject.next(null);
   }
 
   isLoggedIn(): boolean {
-    return localStorage.getItem('currentUser') !== null;
+    return this.getCurrentUserFromStorage() !== null;
   }
 
-  // GET active user details from Spring
   getProfile(email: string): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/profile`, { params: { email } });
   }
 
-  // PUT update profile details
   updateProfile(existingEmail: string, req: any): Observable<User> {
     return this.http.put<User>(`${this.apiUrl}/profile`, req, { params: { existingEmail } }).pipe(
       tap((updatedUser: User) => {
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        this.updateCurrentUserInSidebar(); // Refresh UI instantly
+        this.currentUserSubject.next(updatedUser);
       })
     );
   }
 
-  // Broadcasts the fresh storage details globally
+  /**
+   * Manual trigger to refresh sidebar state if needed
+   */
   updateCurrentUserInSidebar(): void {
     this.currentUserSubject.next(this.getCurrentUserFromStorage());
   }

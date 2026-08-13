@@ -42,6 +42,25 @@
 
       <button type="submit" class="btn btn-primary w-100 rounded-3 mb-3">Authenticate</button>
     </form>
+
+    <!-- ... existing form ... -->
+
+<div class="d-flex align-items-center my-4">
+  <hr class="flex-grow-1">
+  <span class="mx-3 text-muted small">OR</span>
+  <hr class="flex-grow-1">
+</div>
+
+<!-- Google OAuth Button -->
+<a href="http://localhost:8090/oauth2/authorization/google" 
+   class="btn btn-outline-dark w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 py-2">
+  <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" width="18">
+  Continue with Google
+</a>
+
+<div class="text-center mt-4">
+  <span class="text-muted small">No workspace account? <a [routerLink]="['/register']">Sign Up</a></span>
+</div>
     
     <div class="text-center">
       <span class="text-muted small">No workspace account? <a [routerLink]="['/register']" class="text-decoration-none">Sign Up</a></span>
