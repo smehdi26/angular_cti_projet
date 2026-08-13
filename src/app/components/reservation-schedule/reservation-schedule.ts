@@ -34,31 +34,31 @@ export class ReservationScheduleComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-  const today = new Date();
-  this.selectedDate = today.toISOString().split('T')[0];
+    const today = new Date();
+    this.selectedDate = today.toISOString().split('T')[0];
 
-  // 1. Capture query parameters
-  const qParams = this.route.snapshot.queryParams;
-  
-  if (qParams['date']) {
-    this.selectedDate = qParams['date'];
+    // 1. Capture query parameters (handles navigation from Client Profile)
+    const qParams = this.route.snapshot.queryParams;
+    
+    if (qParams['date']) {
+      this.selectedDate = qParams['date'];
+    }
+
+    // 2. Initialize form and PRE-FILL data if it exists in the URL
+    this.bookingForm = this.fb.group({
+      name: ['', [Validators.required]],
+      date: [this.selectedDate, [Validators.required]],
+      time: ['', [Validators.required]],
+      clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
+      technicianId: ['', [Validators.required]],
+      priority: ['MEDIUM', [Validators.required]], // Default priority level
+      description: [qParams['description'] || '']
+    });
+    
+    this.loadSlots();
+    this.loadClients();
+    this.loadTechnicians();
   }
-
-  // 2. Initialize form and PRE-FILL clientId if it exists in the URL
-  this.bookingForm = this.fb.group({
-    name: ['', [Validators.required]],
-    date: [this.selectedDate, [Validators.required]],
-    time: ['', [Validators.required]],
-    // This line handles the auto-fill from the query parameter
-    clientId: [qParams['clientId'] ? Number(qParams['clientId']) : '', [Validators.required]],
-    technicianId: ['', [Validators.required]],
-    description: [qParams['description'] || '']
-  });
-
-  this.loadSlots();
-  this.loadClients();
-  this.loadTechnicians();
-}
 
   loadSlots(): void {
     this.reservationService.getSlots(this.selectedDate).subscribe({
@@ -126,12 +126,15 @@ export class ReservationScheduleComponent implements OnInit {
     }
 
     const formValue = this.bookingForm.value;
+
+    // Build the request object matching the BookingRequest interface in reservation.ts
     const request: BookingRequest = {
       name: formValue.name,
       clientId: Number(formValue.clientId),
       date: formValue.date,
       time: formValue.time,
       technicianId: Number(formValue.technicianId),
+      priority: formValue.priority, // FIXED: Included priority field to satisfy TS2741
       description: formValue.description
     };
 
@@ -139,13 +142,14 @@ export class ReservationScheduleComponent implements OnInit {
       next: () => {
         this.errorMessage = '';
         
-        // Safely resets the validation state (clears all red warning outlines) [1.2.6]
+        // Safely resets the validation state and clears the form
         this.bookingForm.reset({
-          date: this.selectedDate, // Preserves the active date
+          date: this.selectedDate, // Preserves the currently viewed date
           name: '',
           time: '',
           clientId: '',
           technicianId: '',
+          priority: 'MEDIUM', // Reset priority to default
           description: ''
         });
 

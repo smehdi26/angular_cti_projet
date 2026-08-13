@@ -8,6 +8,7 @@ export interface Reservation {
   id?: number;
   name: string; 
   client: Client;
+  priority: string; // Add this
   reservationTime: string; // ISO String (LocalDateTime)
   description?: string;
   status: 'UNTREATED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
@@ -30,6 +31,7 @@ export interface BookingRequest {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   description?: string;
+  priority: string; // Add this
   technicianId: number; // Assigned user ID
 }
 

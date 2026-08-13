@@ -22,7 +22,7 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   statusFilter: string = '';
   currentView: string = 'list';
 
-  // Counts (pre-calculated to prevent UI lags)
+  // Kanban Board Counts
   untreatedCount = 0;
   inprogressCount = 0;
   doneCount = 0;
@@ -41,11 +41,15 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    // Small delay to ensure the DOM is ready for FullCalendar
     setTimeout(() => {
       this.initCalendar();
-    }, 100);
+    }, 150);
   }
 
+  /**
+   * Loads data from the server and refreshes all UI metrics
+   */
   loadReservations(): void {
     this.reservationService.getReservations(this.keyword, this.statusFilter).subscribe({
       next: (data: Reservation[]) => {
@@ -53,12 +57,13 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
         this.calculateStatusCounts();
         this.updateCalendarEvents();
       },
-      error: (err: any) => {
-        console.error('Failed to load reservations', err);
-      }
+      error: (err: any) => console.error('Failed to load reservations', err)
     });
   }
 
+  /**
+   * Updates the counts used for the Kanban board columns
+   */
   calculateStatusCounts(): void {
     this.untreatedCount = this.reservations.filter(r => r.status === 'UNTREATED').length;
     this.inprogressCount = this.reservations.filter(r => r.status === 'IN_PROGRESS').length;
@@ -87,14 +92,17 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     this.loadReservations();
   }
 
+  /**
+   * Updates reservation status with a prompt for cancellation reason
+   */
   submitStatusForm(res: Reservation, selectElement: HTMLSelectElement): void {
     const status = selectElement.value;
     let reason = '';
 
     if (status === 'CANCELLED') {
-      const promptVal = prompt("Enter the reason for cancelling this reservation (optional):");
+      const promptVal = prompt("Reason for cancellation (optional):");
       if (promptVal === null) {
-        selectElement.value = res.status;
+        selectElement.value = res.status; // User clicked cancel on prompt
         return;
       }
       reason = promptVal;
@@ -124,8 +132,10 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
         },
         events: [],
         eventClick: (info: any) => {
+          // Map properties for the detail modal
           this.selectedRes = info.event.extendedProps;
           this.selectedRes.start = info.event.start;
+          this.selectedRes.id = info.event.id;
           
           const modalEl = document.getElementById('eventDetailsModal');
           if (modalEl) {
@@ -142,15 +152,18 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     if (!this.calendar) return;
 
     const events = this.reservations.map(res => ({
-      id: res.client ? res.client.id?.toString() : '',
-      title: res.client ? res.client.name : 'Unknown',
+      id: res.id?.toString(),
+      title: res.name,
       start: res.reservationTime,
+      backgroundColor: this.getEventColor(res.priority),
       extendedProps: {
+        clientId: res.client?.id,
         clientName: res.client ? res.client.name : 'Unknown',
         clientEmail: res.client ? res.client.email : '',
         clientPhone: this.getPrimaryPhone(res.client),
         description: res.description,
         status: res.status,
+        priority: res.priority, // NEW: Priority passed to modal
         cancellationReason: res.cancellationReason,
         technicianName: res.technician ? (res.technician.firstName + ' ' + res.technician.lastName) : 'Unassigned'
       }
@@ -158,6 +171,17 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
 
     this.calendar.removeAllEvents();
     this.calendar.addEventSource(events);
+  }
+
+  // Returns color code for calendar dots based on priority
+  private getEventColor(priority: string): string {
+    switch (priority) {
+      case 'CRITICAL': return '#ef4444';
+      case 'HIGH': return '#f59e0b';
+      case 'MEDIUM': return '#4f46e5';
+      case 'LOW': return '#06b6d4';
+      default: return '#94a3b8';
+    }
   }
 
   deleteReservation(id: number): void {
@@ -172,7 +196,9 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Universal Sorter [1.1.4]
+  /**
+   * Multi-type Sorter (Handles Priority Logic)
+   */
   sort(headerEl: HTMLTableCellElement): void {
     const table = headerEl.closest('table');
     if (!table) return;
@@ -185,18 +211,28 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     const nextDir = isAscending ? 'desc' : 'asc';
     headerEl.setAttribute('data-sort-dir', nextDir);
 
+    // Update Icons
     table.querySelectorAll('th.sortable i').forEach(icon => {
       icon.className = 'bi bi-arrow-down-up ms-1 text-muted';
     });
-
-    const icon = headerEl.querySelector('i');
-    if (icon) {
-      icon.className = nextDir === 'asc' ? 'bi bi-caret-up-fill ms-1 text-primary' : 'bi bi-caret-down-fill ms-1 text-primary';
+    const currentIcon = headerEl.querySelector('i');
+    if (currentIcon) {
+      currentIcon.className = nextDir === 'asc' ? 'bi bi-caret-up-fill ms-1 text-primary' : 'bi bi-caret-down-fill ms-1 text-primary';
     }
 
+    // Logical Weight for Priority Sorting
+    const priorityWeight: any = { 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+
     rows.sort((rowA, rowB) => {
-      const cellA = rowA.children[index].textContent?.trim() || '';
-      const cellB = rowB.children[index].textContent?.trim() || '';
+      let cellA = rowA.children[index].textContent?.trim() || '';
+      let cellB = rowB.children[index].textContent?.trim() || '';
+
+      // Special Case: Priority Sorting by weight instead of alpha
+      if (headerEl.innerText.includes('Priority')) {
+        const weightA = priorityWeight[cellA] || 0;
+        const weightB = priorityWeight[cellB] || 0;
+        return isAscending ? weightB - weightA : weightA - weightB;
+      }
 
       if (!isNaN(Number(cellA)) && !isNaN(Number(cellB)) && cellA !== '' && cellB !== '') {
         return isAscending ? Number(cellB) - Number(cellA) : Number(cellA) - Number(cellB);
