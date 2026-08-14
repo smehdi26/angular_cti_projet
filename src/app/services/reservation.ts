@@ -45,12 +45,13 @@ export class ReservationService {
   constructor(private http: HttpClient) { }
 
   // Fetch all reservations with optional filtering
-  getReservations(keyword?: string, statusFilter?: string): Observable<Reservation[]> {
-    let params: any = {};
-    if (keyword) params.keyword = keyword;
-    if (statusFilter) params.statusFilter = statusFilter;
-    return this.http.get<Reservation[]>(this.apiUrl, { params });
-  }
+  getReservations(keyword?: string, statusFilter?: string, priorityFilter?: string): Observable<Reservation[]> {
+  let params: any = {};
+  if (keyword) params.keyword = keyword;
+  if (statusFilter) params.statusFilter = statusFilter;
+  if (priorityFilter) params.priorityFilter = priorityFilter; // NEW
+  return this.http.get<Reservation[]>(this.apiUrl, { params });
+}
 
   // Fetch 30-min intervals for a specific day
   getSlots(date: string): Observable<TimeSlot[]> {
@@ -90,4 +91,8 @@ export class ReservationService {
   deleteReservation(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  updateReservation(id: number, req: any): Observable<Reservation> {
+  return this.http.put<Reservation>(`${this.apiUrl}/${id}`, req, { withCredentials: true });
+}
 }

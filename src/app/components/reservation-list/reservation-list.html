@@ -1,16 +1,16 @@
 <div class="container-fluid py-4" *ngIf="reservations">
-  <!-- HEADER & QUICK ACTIONS -->
+  <!-- 1. HEADER & QUICK ACTIONS -->
   <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold text-dark mb-1">Reservations Directory</h3>
-      <p class="text-muted mb-0">Unified dashboard displaying scheduled times, assignments, and triage metrics</p>
+      <p class="text-muted mb-0">Click on a reservation title to view or modify details</p>
     </div>
     <a [routerLink]="['/reservations/schedule']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 shadow-sm">
       <i class="bi bi-calendar-plus"></i> + Schedule Reservation
     </a>
   </div>
 
-  <!-- VIEW TABS SWITCHER -->
+  <!-- 2. VIEW TABS SWITCHER -->
   <div class="d-flex gap-2 mb-4 border-bottom pb-2">
     <button [class.btn-primary]="currentView === 'list'" [class.btn-light]="currentView !== 'list'"
             (click)="switchView('list')" class="btn btn-sm border view-tab-btn px-3 py-2 d-flex align-items-center gap-2">
@@ -26,36 +26,52 @@
     </button>
   </div>
 
-  <!-- VIEW 1: LIST VIEW CONTAINER (RESTRUCTURED COLUMN ORDER) -->
+  <!-- 3. VIEW 1: LIST VIEW CONTAINER -->
   <div [class.d-none]="currentView !== 'list'">
     <!-- Search and Filter Form -->
     <div class="card mb-4 shadow-sm border-0">
-      <div class="card-body bg-white rounded p-3">
-        <div class="row g-2 align-items-center">
-          <div class="col-md-7">
-            <div class="input-group">
-              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
-              <input type="text" [(ngModel)]="keyword" (input)="onSearchAndFilter()" 
-                     class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, client, or notes...">
-            </div>
-          </div>
-          <div class="col-md-3">
-            <select [(ngModel)]="statusFilter" (change)="onSearchAndFilter()" class="form-select bg-light">
-              <option value="">Status: All</option>
-              <option value="UNTREATED">Status: Untreated</option>
-              <option value="IN_PROGRESS">Status: In Progress</option>
-              <option value="DONE">Status: Done</option>
-              <option value="CANCELLED">Status: Cancelled</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <button (click)="keyword = ''; statusFilter = ''; onSearchAndFilter();" class="btn btn-light border w-100">
-              <i class="bi bi-arrow-counterclockwise"></i> Reset
-            </button>
-          </div>
+  <div class="card-body bg-white rounded p-3">
+    <div class="row g-2 align-items-center">
+      <!-- Search Keyword -->
+      <div class="col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+          <input type="text" [(ngModel)]="keyword" (input)="onSearchAndFilter()" 
+                 class="form-control bg-light border-start-0 ps-0" placeholder="Search by name, client...">
         </div>
       </div>
+
+      <!-- Status Filter -->
+      <div class="col-md-2">
+        <select [(ngModel)]="statusFilter" (change)="onSearchAndFilter()" class="form-select bg-light">
+          <option value="">Status: All</option>
+          <option value="UNTREATED">Untreated</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="DONE">Done</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+      </div>
+
+      <!-- NEW: Priority Filter -->
+      <div class="col-md-2">
+        <select [(ngModel)]="priorityFilter" (change)="onSearchAndFilter()" class="form-select bg-light">
+          <option value="">Priority: All</option>
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+          <option value="CRITICAL">Critical</option>
+        </select>
+      </div>
+
+      <!-- Reset -->
+      <div class="col-md-3">
+        <button (click)="resetFilters()" class="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+        </button>
+      </div>
     </div>
+  </div>
+</div>
 
     <!-- Data Table -->
     <div class="card shadow-sm border-0">
@@ -64,21 +80,25 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
               <tr>
-                <th class="sortable" (click)="sort(colTitle)" #colTitle>Title <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colClient)" #colClient>Client <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colTech)" #colTech>Technician <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colDate)" #colDate>Date & Time <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable" (click)="sort(colTitle)" #colTitle>Title</th>
+                <th class="sortable" (click)="sort(colClient)" #colClient>Client</th>
+                <th class="sortable" (click)="sort(colTech)" #colTech>Technician</th>
+                <th class="sortable" (click)="sort(colDate)" #colDate>Date & Time</th>
                 <th style="min-width: 180px;">Description</th>
-                <th class="sortable text-center" (click)="sort(colPriority)" #colPriority>Priority <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colState)" #colState>Status <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable text-center" (click)="sort(colPriority)" #colPriority>Priority</th>
+                <th class="sortable" (click)="sort(colState)" #colState>Status</th>
                 <th class="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (res of reservations; track res.id) {
                 <tr>
-                  <!-- 1. Title -->
-                  <td class="fw-bold text-dark">{{ res.name }}</td>
+                  <!-- 1. Title (Clickable to open Edit Pop-up) -->
+                  <td class="fw-bold">
+                    <button (click)="openEditModal(res)" class="btn btn-link p-0 fw-bold text-decoration-none text-primary text-start">
+                      {{ res.name }}
+                    </button>
+                  </td>
 
                   <!-- 2. Client -->
                   <td>
@@ -92,7 +112,7 @@
                   <!-- 3. Technician -->
                   <td>
                     <span *ngIf="res.technician" class="badge bg-light text-dark border fw-normal">
-                      <i class="bi bi-tools text-primary me-1"></i> {{ res.technician.firstName }} {{ res.technician.lastName }}
+                      <i class="bi bi-tools text-primary me-1"></i> {{ res.technician.firstName }}
                     </span>
                     <span *ngIf="!res.technician" class="text-muted small">Unassigned</span>
                   </td>
@@ -118,7 +138,7 @@
                       'bg-warning-subtle text-warning border border-warning': res.priority === 'HIGH',
                       'bg-danger-subtle text-danger border border-danger': res.priority === 'CRITICAL'
                     }" style="font-size: 10px; min-width: 85px;">
-                      <i class="bi bi-flag-fill me-1"></i> {{ res.priority }}
+                      {{ res.priority }}
                     </span>
                   </td>
 
@@ -147,12 +167,6 @@
                     </div>
                   </td>
                 </tr>
-              } @empty {
-                <tr>
-                  <td colspan="8" class="text-center text-muted py-5">
-                    <i class="bi bi-calendar-x fs-1 mb-2 d-block text-muted"></i>No matching records found.
-                  </td>
-                </tr>
               }
             </tbody>
           </table>
@@ -161,39 +175,28 @@
     </div>
   </div>
 
-  <!-- VIEW 2: BOARD VIEW CONTAINER (KANBAN) -->
+  <!-- 4. VIEW 2: BOARD VIEW CONTAINER (KANBAN) -->
   <div [class.d-none]="currentView !== 'board'">
     <div class="row g-3">
       @for (s of ['UNTREATED', 'IN_PROGRESS', 'DONE', 'CANCELLED']; track s) {
         <div class="col-md-3">
           <div class="bg-light p-3 rounded-4 shadow-sm h-100 border">
-            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-              <h6 class="fw-bold mb-0 text-dark">{{ s }}</h6>
-              <span class="badge bg-white text-dark border rounded-pill">{{ (s === 'UNTREATED' ? untreatedCount : s === 'IN_PROGRESS' ? inprogressCount : s === 'DONE' ? doneCount : cancelledCount) }}</span>
-            </div>
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark">{{ s }}</h6>
             <div class="d-flex flex-column gap-2">
               @for (res of reservations; track res.id) {
                 @if (res.status === s) {
                   <div class="card p-3 border-0 shadow-sm bg-white rounded-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                      <span class="badge px-2 py-1" [ngClass]="{
-                        'bg-info text-white': res.priority === 'LOW',
-                        'bg-primary text-white': res.priority === 'MEDIUM',
-                        'bg-warning text-dark': res.priority === 'HIGH',
-                        'bg-danger text-white': res.priority === 'CRITICAL'
-                      }" style="font-size: 9px;">
+                      <span class="badge px-2 py-1" [ngClass]="{'bg-danger': res.priority === 'CRITICAL', 'bg-warning text-dark': res.priority === 'HIGH', 'bg-primary': res.priority === 'MEDIUM', 'bg-info': res.priority === 'LOW'}" style="font-size: 9px;">
                         {{ res.priority }}
                       </span>
                       <small class="text-muted fw-bold">{{ res.reservationTime.substring(11, 16) }}</small>
                     </div>
-                    <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
+                    <!-- Clickable Title in Board -->
+                    <h6 (click)="openEditModal(res)" class="fw-bold mb-1 text-primary" style="cursor: pointer; font-size: 14px;">{{ res.name }}</h6>
                     <p class="small text-muted mb-2">{{ res.client?.name }}</p>
-                    <div class="small text-secondary mb-3 p-2 bg-light rounded" style="font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        {{ res.description || 'No additional details.' }}
-                    </div>
-                    <div class="d-flex align-items-center gap-2 pt-2 border-top">
-                        <i class="bi bi-tools text-primary" style="font-size: 12px;"></i>
-                        <small class="text-muted">{{ res.technician ? res.technician.firstName : 'Unassigned' }}</small>
+                    <div class="small text-secondary mb-2 p-2 bg-light rounded" style="font-size: 11px;">
+                        {{ res.description || 'No description.' }}
                     </div>
                   </div>
                 }
@@ -205,53 +208,69 @@
     </div>
   </div>
 
-  <!-- VIEW 3: CALENDAR VIEW CONTAINER -->
+  <!-- 5. VIEW 3: CALENDAR VIEW CONTAINER -->
   <div [class.d-none]="currentView !== 'calendar'">
     <div id="calendar-view" class="bg-white p-4 rounded-4 shadow-sm border"></div>
   </div>
 </div>
 
-<!-- POPUP MODAL: CALENDAR MEETING DETAILS -->
-<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" *ngIf="selectedRes">
-    <div class="modal-content shadow border-0 rounded-4">
+<!-- =========================================================================
+     6. RE-EDIT POP-UP MODAL (THE UPGRADE)
+     ========================================================================= -->
+<div class="modal fade" id="resEditModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4" *ngIf="selectedRes">
       <div class="modal-header bg-dark text-white border-0 py-3">
-        <h5 class="modal-title fw-bold"><i class="bi bi-calendar-event me-2"></i> Meeting Overview</h5>
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Edit Reservation</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body p-4">
-        <div class="text-center mb-4">
-          <h4 class="fw-bold mb-1 text-dark">{{ selectedRes.clientName }}</h4>
-          <div class="mt-2">
-            <span class="badge px-3 py-2 rounded-pill" [ngClass]="{
-              'bg-info text-white': selectedRes.priority === 'LOW',
-              'bg-primary text-white': selectedRes.priority === 'MEDIUM',
-              'bg-warning text-dark': selectedRes.priority === 'HIGH',
-              'bg-danger text-white': selectedRes.priority === 'CRITICAL'
-            }">{{ selectedRes.priority }} Priority</span>
+
+      <div class="modal-body p-4" [formGroup]="editForm">
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Reservation Title</label>
+          <input type="text" formControlName="name" class="form-control bg-light">
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-bold">Assigned Technician</label>
+            <select formControlName="technicianId" class="form-select bg-light">
+              <option [ngValue]="null">-- Select Tech --</option>
+              <option *ngFor="let tech of technicians" [value]="tech.id">{{ tech.firstName }} {{ tech.lastName }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-bold">Priority Level</label>
+            <select formControlName="priority" class="form-select bg-light">
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </select>
           </div>
         </div>
-        
-        <table class="table table-bordered border-light-subtle">
-          <tr>
-            <th class="w-35 text-muted small fw-semibold bg-light">Scheduled Time</th>
-            <td class="small fw-medium text-dark">{{ selectedRes.start | date:'medium' }}</td>
-          </tr>
-          <tr>
-            <th class="text-muted small fw-semibold bg-light">Assigned Tech</th>
-            <td class="small fw-medium text-dark">{{ selectedRes.technicianName || 'No Technician' }}</td>
-          </tr>
-          <tr>
-            <th class="text-muted small fw-semibold bg-light">Description / Notes</th>
-            <td class="small text-secondary">{{ selectedRes.description || 'No description notes.' }}</td>
-          </tr>
-        </table>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Current Status</label>
+          <select formControlName="status" class="form-select bg-light">
+            <option value="UNTREATED">UNTREATED</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="DONE">DONE</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label small fw-bold">Description / Technical Notes</label>
+          <textarea formControlName="description" class="form-control bg-light" rows="4"></textarea>
+        </div>
       </div>
-      <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
-        <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: selectedRes.clientId, description: selectedRes.description }" data-bs-dismiss="modal" class="btn btn-outline-primary rounded-3 flex-grow-1">
-          <i class="bi bi-arrow-repeat"></i> Reschedule Appointment
-        </a>
-        <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
+
+      <div class="modal-footer border-0 pb-4 px-4 d-flex justify-content-between">
+        <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" (click)="saveReservationChanges()" class="btn btn-primary px-4 shadow-sm">
+          Save Changes
+        </button>
       </div>
     </div>
   </div>

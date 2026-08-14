@@ -1,9 +1,10 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReservationService, Reservation } from '../../services/reservation';
 import { NotificationService } from '../../services/notification';
+import { UserManagementService, SystemUser } from '../../services/user-management';
 
 declare var bootstrap: any;
 declare var FullCalendar: any;
@@ -11,59 +12,79 @@ declare var FullCalendar: any;
 @Component({
   selector: 'app-reservation-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './reservation-list.html',
   styleUrls: ['./reservation-list.css']
 })
 export class ReservationListComponent implements OnInit, AfterViewInit {
 
   reservations: Reservation[] = [];
+  technicians: SystemUser[] = [];
+  
+  // UI State
   keyword: string = '';
   statusFilter: string = '';
   currentView: string = 'list';
+  calendar: any = null;
 
-  // Kanban Board Counts
+  // Kanban Counts
   untreatedCount = 0;
   inprogressCount = 0;
   doneCount = 0;
   cancelledCount = 0;
 
+  // Modal Properties
   selectedRes: any = null;
-  calendar: any = null;
+  editForm!: FormGroup;
+  priorityFilter: string = '';
+
 
   constructor(
+    private fb: FormBuilder,
     private reservationService: ReservationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private userService: UserManagementService
   ) { }
 
   ngOnInit(): void {
+    // 1. Initialize the Edit Form
+    this.editForm = this.fb.group({
+      id: [null],
+      name: ['', [Validators.required]],
+      technicianId: [null],
+      priority: ['MEDIUM', [Validators.required]],
+      status: ['UNTREATED', [Validators.required]],
+      description: ['']
+    });
+
     this.loadReservations();
+    this.loadTechnicians();
   }
 
   ngAfterViewInit(): void {
-    // Small delay to ensure the DOM is ready for FullCalendar
+    // Delay slightly to ensure DOM element exists
     setTimeout(() => {
       this.initCalendar();
-    }, 150);
+    }, 200);
   }
 
-  /**
-   * Loads data from the server and refreshes all UI metrics
-   */
   loadReservations(): void {
-    this.reservationService.getReservations(this.keyword, this.statusFilter).subscribe({
-      next: (data: Reservation[]) => {
-        this.reservations = data;
-        this.calculateStatusCounts();
-        this.updateCalendarEvents();
+  this.reservationService.getReservations(this.keyword, this.statusFilter, this.priorityFilter).subscribe({
+    next: (data: Reservation[]) => {
+      this.reservations = data;
+      this.calculateStatusCounts();
+      this.updateCalendarEvents();
       },
-      error: (err: any) => console.error('Failed to load reservations', err)
+      error: (err: any) => console.error('Error loading reservations', err)
     });
   }
 
-  /**
-   * Updates the counts used for the Kanban board columns
-   */
+  loadTechnicians(): void {
+    this.userService.getTechnicians().subscribe({
+      next: (data) => this.technicians = data
+    });
+  }
+
   calculateStatusCounts(): void {
     this.untreatedCount = this.reservations.filter(r => r.status === 'UNTREATED').length;
     this.inprogressCount = this.reservations.filter(r => r.status === 'IN_PROGRESS').length;
@@ -71,38 +92,77 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     this.cancelledCount = this.reservations.filter(r => r.status === 'CANCELLED').length;
   }
 
-  getPrimaryPhone(client: any): string {
-    if (client && client.phones && client.phones.length > 0) {
-      return client.phones[0].phoneNumber;
-    }
-    return '00000000';
-  }
+  // =========================================================================
+  // INTERACTIVE MODAL LOGIC (TDD: EDITING VIA POP-UP)
+  // =========================================================================
 
-  switchView(viewName: string): void {
-    this.currentView = viewName;
-    if (viewName === 'calendar' && this.calendar) {
-      setTimeout(() => {
-        this.calendar.updateSize();
-        this.updateCalendarEvents();
-      }, 50);
-    }
-  }
+  /**
+   * Action: Triggered when clicking a title in the list or board.
+   * Fills the form with existing data and opens the Edit Modal.
+   */
+  openEditModal(res: Reservation): void {
+    this.selectedRes = res;
+    
+    // Populate form with current values
+    this.editForm.patchValue({
+      id: res.id,
+      name: res.name,
+      technicianId: res.technician ? res.technician.id : null,
+      priority: res.priority,
+      status: res.status,
+      description: res.description
+    });
 
-  onSearchAndFilter(): void {
-    this.loadReservations();
+    const modalEl = document.getElementById('resEditModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
   }
 
   /**
-   * Updates reservation status with a prompt for cancellation reason
+   * Action: Saves modified reservation data to the backend.
    */
+  // UPDATE this specific method in reservation-list.ts
+saveReservationChanges(): void {
+  if (this.editForm.invalid) {
+    this.editForm.markAllAsTouched();
+    return;
+  }
+
+  const val = this.editForm.value;
+  const reservationId = val.id;
+
+  // We send the whole object to the new PUT /{id} endpoint
+  this.reservationService.updateReservation(reservationId, val).subscribe({
+    next: () => {
+      this.loadReservations(); // Refresh the list and Kanban board
+      this.notificationService.updateUnreadCount(); // Refresh notifications
+      
+      // Close the modal
+      const modalEl = document.getElementById('resEditModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      modal?.hide();
+    },
+    error: (err) => {
+      console.error('Update failed', err);
+      alert("Erreur lors de la mise à jour de la réservation.");
+    }
+  });
+}
+
+  // =========================================================================
+  // EXISTING METHODS (LIST UTILS, SORTING, CALENDAR)
+  // =========================================================================
+
   submitStatusForm(res: Reservation, selectElement: HTMLSelectElement): void {
     const status = selectElement.value;
     let reason = '';
 
     if (status === 'CANCELLED') {
-      const promptVal = prompt("Reason for cancellation (optional):");
+      const promptVal = prompt("Motif de l'annulation :");
       if (promptVal === null) {
-        selectElement.value = res.status; // User clicked cancel on prompt
+        selectElement.value = res.status;
         return;
       }
       reason = promptVal;
@@ -112,10 +172,6 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
       next: () => {
         this.loadReservations();
         this.notificationService.updateUnreadCount();
-      },
-      error: (err: any) => {
-        console.error('Failed to update status', err);
-        selectElement.value = res.status;
       }
     });
   }
@@ -125,23 +181,12 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
     if (calendarEl && (window as any).FullCalendar) {
       this.calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        events: [],
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridDay' },
         eventClick: (info: any) => {
-          // Map properties for the detail modal
-          this.selectedRes = info.event.extendedProps;
-          this.selectedRes.start = info.event.start;
-          this.selectedRes.id = info.event.id;
-          
-          const modalEl = document.getElementById('eventDetailsModal');
-          if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-          }
+          // Find the actual reservation object to open the same Edit Modal
+          const resId = Number(info.event.id);
+          const match = this.reservations.find(r => r.id === resId);
+          if (match) this.openEditModal(match);
         }
       });
       this.calendar.render();
@@ -150,96 +195,66 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
 
   updateCalendarEvents(): void {
     if (!this.calendar) return;
-
     const events = this.reservations.map(res => ({
       id: res.id?.toString(),
       title: res.name,
       start: res.reservationTime,
-      backgroundColor: this.getEventColor(res.priority),
-      extendedProps: {
-        clientId: res.client?.id,
-        clientName: res.client ? res.client.name : 'Unknown',
-        clientEmail: res.client ? res.client.email : '',
-        clientPhone: this.getPrimaryPhone(res.client),
-        description: res.description,
-        status: res.status,
-        priority: res.priority, // NEW: Priority passed to modal
-        cancellationReason: res.cancellationReason,
-        technicianName: res.technician ? (res.technician.firstName + ' ' + res.technician.lastName) : 'Unassigned'
-      }
+      color: res.priority === 'CRITICAL' ? '#ef4444' : res.priority === 'HIGH' ? '#f59e0b' : '#4f46e5'
     }));
-
     this.calendar.removeAllEvents();
     this.calendar.addEventSource(events);
   }
 
-  // Returns color code for calendar dots based on priority
-  private getEventColor(priority: string): string {
-    switch (priority) {
-      case 'CRITICAL': return '#ef4444';
-      case 'HIGH': return '#f59e0b';
-      case 'MEDIUM': return '#4f46e5';
-      case 'LOW': return '#06b6d4';
-      default: return '#94a3b8';
+  switchView(viewName: string): void {
+    this.currentView = viewName;
+    if (viewName === 'calendar' && this.calendar) {
+      setTimeout(() => this.calendar.updateSize(), 50);
     }
   }
 
+  onSearchAndFilter(): void { this.loadReservations(); }
+
+  getPrimaryPhone(client: any): string {
+    return (client && client.phones && client.phones.length > 0) ? client.phones[0].phoneNumber : '00000000';
+  }
+
   deleteReservation(id: number): void {
-    if (confirm('Permanently delete this meeting/reservation?')) {
-      this.reservationService.deleteReservation(id).subscribe({
-        next: () => {
-          this.loadReservations();
-          this.notificationService.updateUnreadCount();
-        },
-        error: (err: any) => console.error('Deletion failed', err)
+    if (confirm('Permanently delete this reservation?')) {
+      this.reservationService.deleteReservation(id).subscribe(() => {
+        this.loadReservations();
+        this.notificationService.updateUnreadCount();
       });
     }
   }
 
-  /**
-   * Multi-type Sorter (Handles Priority Logic)
-   */
   sort(headerEl: HTMLTableCellElement): void {
     const table = headerEl.closest('table');
     if (!table) return;
     const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody?.querySelectorAll('tr:not(.text-center)') || []);
-    if (rows.length === 0) return;
-
+    const rows = Array.from(tbody?.querySelectorAll('tr') || []);
     const index = Array.from(headerEl.parentNode?.children || []).indexOf(headerEl);
-    const isAscending = headerEl.getAttribute('data-sort-dir') === 'asc';
-    const nextDir = isAscending ? 'desc' : 'asc';
+    const isAsc = headerEl.getAttribute('data-sort-dir') === 'asc';
+    const nextDir = isAsc ? 'desc' : 'asc';
     headerEl.setAttribute('data-sort-dir', nextDir);
 
-    // Update Icons
-    table.querySelectorAll('th.sortable i').forEach(icon => {
-      icon.className = 'bi bi-arrow-down-up ms-1 text-muted';
-    });
-    const currentIcon = headerEl.querySelector('i');
-    if (currentIcon) {
-      currentIcon.className = nextDir === 'asc' ? 'bi bi-caret-up-fill ms-1 text-primary' : 'bi bi-caret-down-fill ms-1 text-primary';
-    }
-
-    // Logical Weight for Priority Sorting
     const priorityWeight: any = { 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
 
-    rows.sort((rowA, rowB) => {
-      let cellA = rowA.children[index].textContent?.trim() || '';
-      let cellB = rowB.children[index].textContent?.trim() || '';
+    rows.sort((a, b) => {
+      let valA = a.children[index].textContent?.trim() || '';
+      let valB = b.children[index].textContent?.trim() || '';
 
-      // Special Case: Priority Sorting by weight instead of alpha
       if (headerEl.innerText.includes('Priority')) {
-        const weightA = priorityWeight[cellA] || 0;
-        const weightB = priorityWeight[cellB] || 0;
-        return isAscending ? weightB - weightA : weightA - weightB;
+        return isAsc ? priorityWeight[valB] - priorityWeight[valA] : priorityWeight[valA] - priorityWeight[valB];
       }
-
-      if (!isNaN(Number(cellA)) && !isNaN(Number(cellB)) && cellA !== '' && cellB !== '') {
-        return isAscending ? Number(cellB) - Number(cellA) : Number(cellA) - Number(cellB);
-      }
-      return isAscending ? cellB.localeCompare(cellA) : cellA.localeCompare(cellB);
+      return isAsc ? valB.localeCompare(valA) : valA.localeCompare(valB);
     });
-
     rows.forEach(row => tbody?.appendChild(row));
   }
+  
+  resetFilters(): void {
+  this.keyword = '';
+  this.statusFilter = '';
+  this.priorityFilter = ''; // Added
+  this.onSearchAndFilter();
+}
 }
