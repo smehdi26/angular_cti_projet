@@ -1,16 +1,16 @@
 <div class="container-fluid py-4" *ngIf="reservations">
-  <!-- 1. HEADER & QUICK ACTIONS -->
+  <!-- HEADER & QUICK ACTIONS -->
   <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold text-dark mb-1">Reservations Directory</h3>
-      <p class="text-muted mb-0">Manage scheduled meetings, triage priorities, and assign technicians</p>
+      <p class="text-muted mb-0">Unified dashboard displaying scheduled times, assignments, and triage metrics</p>
     </div>
     <a [routerLink]="['/reservations/schedule']" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 shadow-sm">
       <i class="bi bi-calendar-plus"></i> + Schedule Reservation
     </a>
   </div>
 
-  <!-- 2. VIEW TABS SWITCHER -->
+  <!-- VIEW TABS SWITCHER -->
   <div class="d-flex gap-2 mb-4 border-bottom pb-2">
     <button [class.btn-primary]="currentView === 'list'" [class.btn-light]="currentView !== 'list'"
             (click)="switchView('list')" class="btn btn-sm border view-tab-btn px-3 py-2 d-flex align-items-center gap-2">
@@ -26,9 +26,9 @@
     </button>
   </div>
 
-  <!-- 3. VIEW 1: LIST VIEW CONTAINER -->
+  <!-- VIEW 1: LIST VIEW CONTAINER (RESTRUCTURED COLUMN ORDER) -->
   <div [class.d-none]="currentView !== 'list'">
-    <!-- Notion-style Search and Filter Form -->
+    <!-- Search and Filter Form -->
     <div class="card mb-4 shadow-sm border-0">
       <div class="card-body bg-white rounded p-3">
         <div class="row g-2 align-items-center">
@@ -40,19 +40,16 @@
             </div>
           </div>
           <div class="col-md-3">
-            <div class="input-group">
-              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-funnel"></i></span>
-              <select [(ngModel)]="statusFilter" (change)="onSearchAndFilter()" class="form-select bg-light border-start-0 ps-0">
-                <option value="">Status: All</option>
-                <option value="UNTREATED">Status: Untreated</option>
-                <option value="IN_PROGRESS">Status: In Progress</option>
-                <option value="DONE">Status: Done</option>
-                <option value="CANCELLED">Status: Cancelled</option>
-              </select>
-            </div>
+            <select [(ngModel)]="statusFilter" (change)="onSearchAndFilter()" class="form-select bg-light">
+              <option value="">Status: All</option>
+              <option value="UNTREATED">Status: Untreated</option>
+              <option value="IN_PROGRESS">Status: In Progress</option>
+              <option value="DONE">Status: Done</option>
+              <option value="CANCELLED">Status: Cancelled</option>
+            </select>
           </div>
           <div class="col-md-2">
-            <button (click)="keyword = ''; statusFilter = ''; onSearchAndFilter();" class="btn btn-light border w-100" title="Reset Filters">
+            <button (click)="keyword = ''; statusFilter = ''; onSearchAndFilter();" class="btn btn-light border w-100">
               <i class="bi bi-arrow-counterclockwise"></i> Reset
             </button>
           </div>
@@ -60,7 +57,7 @@
       </div>
     </div>
 
-    <!-- Main Data Table -->
+    <!-- Data Table -->
     <div class="card shadow-sm border-0">
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -69,11 +66,10 @@
               <tr>
                 <th class="sortable" (click)="sort(colTitle)" #colTitle>Title <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
                 <th class="sortable" (click)="sort(colClient)" #colClient>Client <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <!-- TDD: PRIORITY COLUMN -->
-                <th class="sortable text-center" (click)="sort(colPriority)" #colPriority>Priority <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
                 <th class="sortable" (click)="sort(colTech)" #colTech>Technician <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colDate)" #colDate>Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
-                <th class="sortable" (click)="sort(colTime)" #colTime>Time <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th class="sortable" (click)="sort(colDate)" #colDate>Date & Time <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
+                <th style="min-width: 180px;">Description</th>
+                <th class="sortable text-center" (click)="sort(colPriority)" #colPriority>Priority <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
                 <th class="sortable" (click)="sort(colState)" #colState>Status <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 11px;"></i></th>
                 <th class="text-end">Actions</th>
               </tr>
@@ -81,33 +77,52 @@
             <tbody>
               @for (res of reservations; track res.id) {
                 <tr>
+                  <!-- 1. Title -->
                   <td class="fw-bold text-dark">{{ res.name }}</td>
+
+                  <!-- 2. Client -->
                   <td>
                     <div class="d-flex align-items-center gap-2" *ngIf="res.client">
-                      <a [routerLink]="['/clients', getPrimaryPhone(res.client)]" class="fw-bold text-dark text-decoration-none">
+                      <a [routerLink]="['/clients', getPrimaryPhone(res.client)]" class="fw-bold text-dark text-decoration-none small">
                         {{ res.client.name }}
                       </a>
                     </div>
                   </td>
-                  <!-- PRIORITY BADGE -->
+
+                  <!-- 3. Technician -->
+                  <td>
+                    <span *ngIf="res.technician" class="badge bg-light text-dark border fw-normal">
+                      <i class="bi bi-tools text-primary me-1"></i> {{ res.technician.firstName }} {{ res.technician.lastName }}
+                    </span>
+                    <span *ngIf="!res.technician" class="text-muted small">Unassigned</span>
+                  </td>
+
+                  <!-- 4. Date & Time -->
+                  <td class="small">
+                    {{ res.reservationTime.substring(0, 10) }} 
+                    <span class="fw-bold d-block text-primary">{{ res.reservationTime.substring(11, 16) }}</span>
+                  </td>
+
+                  <!-- 5. Description -->
+                  <td>
+                    <div class="text-muted small text-truncate" style="max-width: 180px;" [title]="res.description">
+                      {{ res.description || '-' }}
+                    </div>
+                  </td>
+
+                  <!-- 6. Priority -->
                   <td class="text-center">
-                    <span class="badge" [ngClass]="{
+                    <span class="badge rounded-pill" [ngClass]="{
                       'bg-info-subtle text-info border border-info': res.priority === 'LOW',
                       'bg-primary-subtle text-primary border border-primary': res.priority === 'MEDIUM',
                       'bg-warning-subtle text-warning border border-warning': res.priority === 'HIGH',
                       'bg-danger-subtle text-danger border border-danger': res.priority === 'CRITICAL'
-                    }" style="min-width: 80px;">
-                      {{ res.priority }}
+                    }" style="font-size: 10px; min-width: 85px;">
+                      <i class="bi bi-flag-fill me-1"></i> {{ res.priority }}
                     </span>
                   </td>
-                  <td>
-                    <span *ngIf="res.technician" class="badge bg-light text-dark border fw-normal">
-                      <i class="bi bi-tools text-primary me-1"></i> {{ res.technician.firstName }}
-                    </span>
-                    <span *ngIf="!res.technician" class="text-muted small">Unassigned</span>
-                  </td>
-                  <td>{{ res.reservationTime.substring(0, 10) }}</td>
-                  <td class="fw-bold">{{ res.reservationTime.substring(11, 16) }}</td>
+
+                  <!-- 7. Status -->
                   <td>
                     <span class="badge" [ngClass]="{
                       'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
@@ -116,9 +131,11 @@
                       'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
                     }">{{ res.status }}</span>
                   </td>
+
+                  <!-- 8. Actions -->
                   <td class="text-end">
                     <div class="d-flex flex-row gap-1 justify-content-end align-items-center">
-                      <select #statusSelect (change)="submitStatusForm(res, statusSelect)" class="form-select form-select-sm" style="width: auto;">
+                      <select #statusSelect (change)="submitStatusForm(res, statusSelect)" class="form-select form-select-sm" style="width: auto; font-size: 11px;">
                         <option value="UNTREATED" [selected]="res.status === 'UNTREATED'">Untreated</option>
                         <option value="IN_PROGRESS" [selected]="res.status === 'IN_PROGRESS'">In Progress</option>
                         <option value="DONE" [selected]="res.status === 'DONE'">Done</option>
@@ -144,7 +161,7 @@
     </div>
   </div>
 
-  <!-- 4. VIEW 2: BOARD VIEW CONTAINER (KANBAN) -->
+  <!-- VIEW 2: BOARD VIEW CONTAINER (KANBAN) -->
   <div [class.d-none]="currentView !== 'board'">
     <div class="row g-3">
       @for (s of ['UNTREATED', 'IN_PROGRESS', 'DONE', 'CANCELLED']; track s) {
@@ -154,13 +171,11 @@
               <h6 class="fw-bold mb-0 text-dark">{{ s }}</h6>
               <span class="badge bg-white text-dark border rounded-pill">{{ (s === 'UNTREATED' ? untreatedCount : s === 'IN_PROGRESS' ? inprogressCount : s === 'DONE' ? doneCount : cancelledCount) }}</span>
             </div>
-            
             <div class="d-flex flex-column gap-2">
               @for (res of reservations; track res.id) {
                 @if (res.status === s) {
                   <div class="card p-3 border-0 shadow-sm bg-white rounded-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                      <!-- TDD: PRIORITY ON KANBAN CARDS -->
                       <span class="badge px-2 py-1" [ngClass]="{
                         'bg-info text-white': res.priority === 'LOW',
                         'bg-primary text-white': res.priority === 'MEDIUM',
@@ -172,8 +187,11 @@
                       <small class="text-muted fw-bold">{{ res.reservationTime.substring(11, 16) }}</small>
                     </div>
                     <h6 class="fw-bold mb-1 text-dark">{{ res.name }}</h6>
-                    <p class="small text-muted mb-0">{{ res.client?.name }}</p>
-                    <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top">
+                    <p class="small text-muted mb-2">{{ res.client?.name }}</p>
+                    <div class="small text-secondary mb-3 p-2 bg-light rounded" style="font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ res.description || 'No additional details.' }}
+                    </div>
+                    <div class="d-flex align-items-center gap-2 pt-2 border-top">
                         <i class="bi bi-tools text-primary" style="font-size: 12px;"></i>
                         <small class="text-muted">{{ res.technician ? res.technician.firstName : 'Unassigned' }}</small>
                     </div>
@@ -187,13 +205,13 @@
     </div>
   </div>
 
-  <!-- 5. VIEW 3: CALENDAR VIEW CONTAINER -->
+  <!-- VIEW 3: CALENDAR VIEW CONTAINER -->
   <div [class.d-none]="currentView !== 'calendar'">
     <div id="calendar-view" class="bg-white p-4 rounded-4 shadow-sm border"></div>
   </div>
 </div>
 
-<!-- 6. POPUP MODAL: CALENDAR MEETING DETAILS -->
+<!-- POPUP MODAL: CALENDAR MEETING DETAILS -->
 <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" *ngIf="selectedRes">
     <div class="modal-content shadow border-0 rounded-4">
@@ -204,8 +222,6 @@
       <div class="modal-body p-4">
         <div class="text-center mb-4">
           <h4 class="fw-bold mb-1 text-dark">{{ selectedRes.clientName }}</h4>
-          
-          <!-- TDD: PRIORITY IN MODAL -->
           <div class="mt-2">
             <span class="badge px-3 py-2 rounded-pill" [ngClass]="{
               'bg-info text-white': selectedRes.priority === 'LOW',
@@ -213,13 +229,6 @@
               'bg-warning text-dark': selectedRes.priority === 'HIGH',
               'bg-danger text-white': selectedRes.priority === 'CRITICAL'
             }">{{ selectedRes.priority }} Priority</span>
-            
-            <span class="badge px-3 py-2 rounded-pill ms-2" [ngClass]="{
-              'bg-warning-subtle text-warning-emphasis': selectedRes.status === 'UNTREATED',
-              'bg-primary-subtle text-primary-emphasis': selectedRes.status === 'IN_PROGRESS',
-              'bg-success-subtle text-success-emphasis': selectedRes.status === 'DONE',
-              'bg-danger-subtle text-danger-emphasis': selectedRes.status === 'CANCELLED'
-            }">{{ selectedRes.status }}</span>
           </div>
         </div>
         
@@ -233,14 +242,14 @@
             <td class="small fw-medium text-dark">{{ selectedRes.technicianName || 'No Technician' }}</td>
           </tr>
           <tr>
-            <th class="text-muted small fw-semibold bg-light">Notes</th>
-            <td class="small text-secondary">{{ selectedRes.description || 'No notes.' }}</td>
+            <th class="text-muted small fw-semibold bg-light">Description / Notes</th>
+            <td class="small text-secondary">{{ selectedRes.description || 'No description notes.' }}</td>
           </tr>
         </table>
       </div>
       <div class="modal-footer border-0 pb-4 d-flex justify-content-between">
-        <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: selectedRes.id, description: selectedRes.description }" data-bs-dismiss="modal" class="btn btn-outline-primary rounded-3 flex-grow-1">
-          <i class="bi bi-arrow-repeat"></i> Reschedule
+        <a [routerLink]="['/reservations/schedule']" [queryParams]="{ clientId: selectedRes.clientId, description: selectedRes.description }" data-bs-dismiss="modal" class="btn btn-outline-primary rounded-3 flex-grow-1">
+          <i class="bi bi-arrow-repeat"></i> Reschedule Appointment
         </a>
         <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
       </div>

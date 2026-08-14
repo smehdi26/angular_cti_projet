@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ContractService, Contract, VisitSchedule } from '../../services/contract';
+import { ContractService, Contract } from '../../services/contract';
 import { NotificationService } from '../../services/notification';
 
 declare var bootstrap: any;
@@ -17,17 +17,16 @@ declare var bootstrap: any;
 export class ContractDetailComponent implements OnInit {
 
   contractId!: number;
-  contract!: Contract;
+  contract!: any; // Use any to allow dynamic property access (visitDate1, etc.)
   editForm!: FormGroup;
+  visitForm!: FormGroup;
   todayDate: Date = new Date();
   
   isEditing: boolean = false;
   errorMessage: string = '';
 
-  // Added Scheduler Modal Properties [1.2.6]
-  selectedDates: string[] = [];
-  selectedFiles: string[] = [];
-  selectedFileNames: string[] = [];
+  // Properties for the individual Visit Validation Pop-up
+  selectedVisitIndex: number = 1;
 
   constructor(
     private route: ActivatedRoute,
@@ -40,10 +39,19 @@ export class ContractDetailComponent implements OnInit {
   ngOnInit(): void {
     this.contractId = Number(this.route.snapshot.params['id']);
 
+    // General Contract metadata form
     this.editForm = this.fb.group({
       name: ['', [Validators.required]],
       redevance: ['', [Validators.required]],
       dateSignature: ['', [Validators.required]]
+    });
+
+    // Individual Visit Validation form
+    this.visitForm = this.fb.group({
+      date: ['', [Validators.required]],
+      observations: [''],
+      filePath: [''],
+      fileName: ['']
     });
 
     this.loadContract();
@@ -66,195 +74,156 @@ export class ContractDetailComponent implements OnInit {
     });
   }
 
-  // Scheduler Modal Action Methods [1.2.1, 1.2.6]
-  openScheduleModal(contract: Contract): void {
-    const visitsCount = contract.numberOfVisits || 0;
+  /**
+   * TDD Requirement: Sequential Control Logic
+   * Logic: Visit N is accessible ONLY if N=1 OR Visit N-1 is validated (has a date).
+   */
+  canAccessVisit(index: number): boolean {
+    if (index === 1) return true;
+    const previousVisitData = this.getVisitDataByIndex(index - 1);
+    return !!previousVisitData.date; // Accessible if previous has a date
+  }
 
-    this.selectedDates = [];
-    this.selectedDates.push(contract.visitDate1 || '');
-    this.selectedDates.push(contract.visitDate2 || '');
-    this.selectedDates.push(contract.visitDate3 || '');
-    this.selectedDates.push(contract.visitDate4 || '');
-    this.selectedDates.push(contract.visitDate5 || '');
-    this.selectedDates.push(contract.visitDate6 || '');
+  /**
+   * Utility to extract flat fields from the Contract object dynamically
+   */
+  getVisitDataByIndex(index: number) {
+    if (!this.contract) return {};
+    return {
+      date: this.contract[`visitDate${index}`],
+      obs: this.contract[`visitObs${index}`],
+      user: this.contract[`visitUser${index}`],
+      file: this.contract[`visitFile${index}`],
+      fileName: this.contract[`visitFileName${index}`],
+      fileRaw: this.contract[`visitFile${index}Raw`]
+    };
+  }
 
-    this.selectedFiles = [];
-    this.selectedFiles.push(contract.visitFile1Raw || '');
-    this.selectedFiles.push(contract.visitFile2Raw || '');
-    this.selectedFiles.push(contract.visitFile3Raw || '');
-    this.selectedFiles.push(contract.visitFile4Raw || '');
-    this.selectedFiles.push(contract.visitFile5Raw || '');
-    this.selectedFiles.push(contract.visitFile6Raw || '');
+  /**
+   * Action: Opens the pop-up for a specific visit index
+   */
+  openVisitModal(index: number): void {
+    this.selectedVisitIndex = index;
+    const data = this.getVisitDataByIndex(index);
 
-    this.selectedFileNames = [];
-    this.selectedFileNames.push(contract.visitFileName1 || '');
-    this.selectedFileNames.push(contract.visitFileName2 || '');
-    this.selectedFileNames.push(contract.visitFileName3 || '');
-    this.selectedFileNames.push(contract.visitFileName4 || '');
-    this.selectedFileNames.push(contract.visitFileName5 || '');
-    this.selectedFileNames.push(contract.visitFileName6 || '');
+    // Populate form with existing data (for "See" or "Update" capability)
+    this.visitForm.reset({
+      date: data.date || '',
+      observations: data.obs || '',
+      filePath: data.fileRaw || '',
+      fileName: data.fileName || ''
+    });
 
-    this.selectedDates = this.selectedDates.slice(0, visitsCount);
-    this.selectedFiles = this.selectedFiles.slice(0, visitsCount);
-    this.selectedFileNames = this.selectedFileNames.slice(0, visitsCount);
-
-    const modalEl = document.getElementById('scheduleMonthsModal');
+    const modalEl = document.getElementById('visitModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
     }
   }
 
-  onFileSelected(event: any, index: number): void {
+  /**
+   * Action: Handles file upload for the specific visit form
+   */
+  onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (file) {
       this.contractService.uploadFile(file).subscribe({
         next: (res) => {
-          this.selectedFiles[index] = res.filePath;
-          this.selectedFileNames[index] = res.fileName;
+          this.visitForm.patchValue({
+            filePath: res.filePath,
+            fileName: res.fileName
+          });
         },
         error: (err) => console.error('Upload failed', err)
       });
     }
   }
 
-  clearVisitSlot(index: number): void {
-    if (confirm(`Clear all scheduled data for Visit #${index + 1}?`)) {
-      this.selectedDates[index] = '';
-      this.selectedFiles[index] = '';
-      this.selectedFileNames[index] = '';
+  /**
+   * Action: Submit validation for the single visit
+   */
+  saveVisitValidation(): void {
+    if (this.visitForm.invalid) {
+      this.visitForm.markAllAsTouched();
+      return;
     }
-  }
 
-  saveSchedule(): void {
-    const visitsPayload: VisitSchedule[] = this.selectedDates.map((date, idx) => ({
-      date: date,
-      filePath: this.selectedFiles[idx] || undefined,
-      fileName: this.selectedFileNames[idx] || undefined
-    }));
+    const payload = {
+      visitIndex: this.selectedVisitIndex,
+      ...this.visitForm.value
+    };
 
-    this.contractService.updateContractScheduleDates(this.contractId, visitsPayload).subscribe({
+    this.contractService.validateVisit(this.contractId, payload).subscribe({
       next: () => {
-        this.loadContract(); // Refresh details page instantly
+        this.loadContract(); // Refresh details instantly
         this.notificationService.updateUnreadCount();
-        
-        const modalEl = document.getElementById('scheduleMonthsModal');
+        const modalEl = document.getElementById('visitModal');
         if (modalEl) {
-          const modal = bootstrap.getInstance(modalEl);
+          const modal = bootstrap.Modal.getInstance(modalEl);
           modal?.hide();
         }
       },
-      error: (err: any) => console.error('Failed to save dates', err)
+      error: (err: any) => {
+        alert(err.error?.message || "Error validating visit");
+      }
     });
   }
 
-  getMinDateForVisit(contract: Contract, visitIndex: number): string {
-    if (!contract.dateSignature) return '';
-    const signature = new Date(contract.dateSignature);
-    const n = contract.numberOfVisits || 1;
-    const t = 12 / n;
-    const minDate = new Date(signature);
-    minDate.setMonth(signature.getMonth() + (visitIndex * t));
-    return minDate.toISOString().split('T')[0];
+  /**
+   * Action: Delete specific visit data
+   */
+  deleteVisitData(): void {
+    if (confirm(`Voulez-vous vraiment supprimer toutes les données de la visite #${this.selectedVisitIndex} ?`)) {
+      this.contractService.deleteVisitData(this.contractId, this.selectedVisitIndex).subscribe({
+        next: () => {
+          this.loadContract();
+          const modalEl = document.getElementById('visitModal');
+          if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal?.hide();
+          }
+        }
+      });
+    }
   }
 
-  getMaxDateForVisit(contract: Contract, visitIndex: number): string {
-    if (!contract.dateSignature) return '';
-    const signature = new Date(contract.dateSignature);
-    const n = contract.numberOfVisits || 1;
-    const t = 12 / n;
-    const maxDate = new Date(signature);
-    maxDate.setMonth(signature.getMonth() + ((visitIndex + 1) * t));
-    maxDate.setDate(maxDate.getDate() - 1);
-    return maxDate.toISOString().split('T')[0];
-  }
+  // --- GENERAL CONTRACT HELPERS ---
 
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
   }
 
   saveChanges(): void {
-    if (this.editForm.invalid) {
-      this.editForm.markAllAsTouched();
-      return;
-    }
-
-    const request = {
-      ...this.editForm.value,
-      clientId: this.contract.clientId
-    };
-
+    if (this.editForm.invalid) return;
+    const request = { ...this.editForm.value, clientId: this.contract.clientId };
     this.contractService.updateContract(this.contractId, request).subscribe({
-      next: () => {
-        this.isEditing = false;
-        this.loadContract();
-        this.notificationService.updateUnreadCount();
-      },
-      error: (err: any) => {
-        this.errorMessage = 'Failed to save changes.';
-        console.error(err);
-      }
+      next: () => { this.isEditing = false; this.loadContract(); }
     });
   }
 
   toggleStatus(): void {
     const nextStatus = this.contract.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    const message = nextStatus === 'ACTIVE' ? 'Activate this contract?' : 'Suspend this contract?';
-
-    if (confirm(message)) {
-      this.contractService.toggleStatus(this.contractId, nextStatus).subscribe({
-        next: () => {
-          this.loadContract();
-          this.notificationService.updateUnreadCount();
-        },
-        error: (err: any) => console.error('Status update failed', err)
-      });
-    }
+    this.contractService.toggleStatus(this.contractId, nextStatus).subscribe(() => this.loadContract());
   }
 
   renewContract(): void {
-    if (confirm('Renew/Extend this contract signature date to another year? (This will also clear current scheduled months)')) {
-      this.contractService.renewContract(this.contractId).subscribe({
-        next: () => {
-          this.loadContract();
-          this.notificationService.updateUnreadCount();
-        },
-        error: (err: any) => console.error('Renewal failed', err)
-      });
+    if (confirm('Renew this contract? Current visit slots will be archived to history.')) {
+      this.contractService.renewContract(this.contractId).subscribe(() => this.loadContract());
     }
   }
 
-  deleteContract(): void {
-    if (confirm('Permanently delete/terminate this maintenance contract?')) {
-      this.notificationService.updateUnreadCount();
-      this.router.navigate(['/contracts']);
-    }
-  }
+  exportToPdf(): void { window.print(); }
 
   getNextVisit(): string {
     if (!this.contract || !this.contract.monthsOfVisits) return 'Non planifiée';
-    
-    const monthsList = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
+    const monthsList = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     const currentMonthIndex = new Date().getMonth();
     const scheduled = this.contract.monthsOfVisits.split(', ');
-
-    for (let i = 0; i < scheduled.length; i++) {
-      const monthIdx = monthsList.indexOf(scheduled[i]);
-      if (monthIdx >= currentMonthIndex) {
-        return scheduled[i];
-      }
+    for (let month of scheduled) {
+      if (monthsList.indexOf(month) >= currentMonthIndex) return month;
     }
     return scheduled[0] + ' (Année Prochaine)';
   }
 
-  exportToPdf(): void {
-    window.print();
-  }
-
-  trackByIndex(index: number): number {
-    return index;
-  }
+  trackByIndex(index: number): number { return index; }
 }

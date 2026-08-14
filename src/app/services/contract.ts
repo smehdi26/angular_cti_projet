@@ -22,33 +22,50 @@ export interface Contract {
   client?: Client;
   history?: ContractHistory[]; // Dynamic historical logs [1.2.6]
 
-  // Visit exact date properties [1.1.4, 1.2.6]
+  // Visit properties for Slot 1
   visitDate1?: string;
+  visitObs1?: string;      // NEW: Technical observations
+  visitUser1?: string;     // NEW: User who validated
   visitFile1?: string;
   visitFileName1?: string;
-  visitFile1Raw?: string; // Stores unique raw filename reference
+  visitFile1Raw?: string; 
 
+  // Visit properties for Slot 2
   visitDate2?: string;
+  visitObs2?: string;
+  visitUser2?: string;
   visitFile2?: string;
   visitFileName2?: string;
   visitFile2Raw?: string;
 
+  // Visit properties for Slot 3
   visitDate3?: string;
+  visitObs3?: string;
+  visitUser3?: string;
   visitFile3?: string;
   visitFileName3?: string;
   visitFile3Raw?: string;
 
+  // Visit properties for Slot 4
   visitDate4?: string;
+  visitObs4?: string;
+  visitUser4?: string;
   visitFile4?: string;
   visitFileName4?: string;
   visitFile4Raw?: string;
 
+  // Visit properties for Slot 5
   visitDate5?: string;
+  visitObs5?: string;
+  visitUser5?: string;
   visitFile5?: string;
   visitFileName5?: string;
   visitFile5Raw?: string;
 
+  // Visit properties for Slot 6
   visitDate6?: string;
+  visitObs6?: string;
+  visitUser6?: string;
   visitFile6?: string;
   visitFileName6?: string;
   visitFile6Raw?: string;
@@ -128,5 +145,20 @@ export class ContractService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<any>(`${this.apiUrl}/upload`, formData);
+  }
+
+  /**
+   * 12. PUT: Validates a single visit slot (index 1-6)
+   * Sends index, date, observations, and file data.
+   */
+  validateVisit(id: number, payload: any): Observable<Contract> {
+    return this.http.put<Contract>(`${this.apiUrl}/${id}/validate-visit`, payload);
+  }
+
+  /**
+   * 13. DELETE: Clears/Deletes data for a specific visit slot
+   */
+  deleteVisitData(id: number, visitIndex: number): Observable<Contract> {
+    return this.http.delete<Contract>(`${this.apiUrl}/${id}/visit/${visitIndex}`);
   }
 }
