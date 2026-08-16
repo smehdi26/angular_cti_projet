@@ -27,6 +27,7 @@ export interface Client {
   sector?: Sector;
   sectorId?: number;
   phones?: Phone[];
+  createdAt?: string; // <--- ADD THIS LINE
 }
 
 @Injectable({

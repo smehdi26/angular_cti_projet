@@ -2,17 +2,17 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgApexchartsModule } from "ng-apexcharts";
 import { AnalyticsService } from '../../services/analytics';
-import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule, RouterLink],
+  imports: [CommonModule, NgApexchartsModule, FormsModule],
   templateUrl: './analytics.html',
   styleUrls: ['./analytics.css']
 })
 export class AnalyticsComponent implements OnInit {
-  // Chart Options Objects
+  // --- All Chart Objects Preserved ---
   public sectorPieOptions: any;
   public statusDonutOptions: any;
   public contractBarOptions: any;
@@ -20,12 +20,11 @@ export class AnalyticsComponent implements OnInit {
   public executionRadialOptions: any;
   public techWorkloadOptions: any;
   public resMonthlyChartOptions: any;
-
+  public acquisitionChartOptions: any; // Added for growth tracking
 
   public stats: any;
   public loading: boolean = true;
 
-  // Professional Color Palette
   private colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
   constructor(private analyticsService: AnalyticsService) {}
@@ -35,6 +34,7 @@ export class AnalyticsComponent implements OnInit {
   }
 
   loadData(): void {
+    this.loading = true;
     this.analyticsService.getStats().subscribe({
       next: (data) => {
         this.stats = data;
@@ -49,122 +49,94 @@ export class AnalyticsComponent implements OnInit {
   }
 
   initCharts(data: any): void {
-    // 1. Clients by Sector (Pie)
+    // 1. Sector Distribution (Pie)
     this.sectorPieOptions = {
       series: Object.values(data.clientsBySector || {}),
-      chart: { type: "pie", height: 300 },
+      chart: { type: "pie", height: 350 },
       labels: Object.keys(data.clientsBySector || {}),
       colors: this.colors,
-      legend: { position: 'bottom' },
-      responsive: [{ breakpoint: 480, options: { chart: { width: 200 } } }]
+      legend: { position: 'bottom' }
     };
 
     // 2. Reservation Status (Donut)
     this.statusDonutOptions = {
       series: Object.values(data.reservationStatus || {}),
-      chart: { type: "donut", height: 300 },
+      chart: { type: "donut", height: 350 },
       labels: Object.keys(data.reservationStatus || {}),
-      colors: ['#f59e0b', '#4f46e5', '#10b981', '#ef4444'], // Matches Warning, Primary, Success, Danger
-      plotOptions: { pie: { donut: { size: '65%' } } },
-      legend: { position: 'bottom' }
+      colors: ['#f59e0b', '#4f46e5', '#10b981', '#ef4444'],
+      plotOptions: { pie: { donut: { size: '70%' } } }
     };
 
     // 3. Contract Types (Bar)
     this.contractBarOptions = {
       series: [{ name: "Contracts", data: Object.values(data.contractsByType || {}) }],
-      chart: { type: "bar", height: 300, toolbar: { show: false } },
-      colors: ['#4f46e5'],
-      plotOptions: { bar: { borderRadius: 8, columnWidth: '45%' } },
+      chart: { type: "bar", height: 350, toolbar: { show: false } },
+      plotOptions: { bar: { borderRadius: 10, columnWidth: '50%' } },
       xaxis: { categories: Object.keys(data.contractsByType || {}) },
-      dataLabels: { enabled: false }
+      colors: ['#4f46e5']
     };
 
-    // 4. Tunisian Governorate Distribution (Treemap)
+    // 4. Regional Distribution (Treemap)
     this.cityTreemapOptions = {
       series: [{
         data: Object.entries(data.cityDistribution || {}).map(([key, val]) => ({ x: key, y: val }))
       }],
-      legend: { show: false },
       chart: { height: 350, type: "treemap", toolbar: { show: false } },
       colors: ['#6366f1'],
-      title: { text: "Client Density by Governorate", align: 'center' }
+      title: { text: "Regional Client Density", align: 'center' }
     };
 
-    // 5. Maintenance Execution & Documentation (Double Radial Bar)
-  this.executionRadialOptions = {
-    // Two series: Performed vs Documented
-    series: [data.executionRate.performedPct, data.executionRate.documentedPct],
-    chart: { height: 380, type: "radialBar" },
-    plotOptions: {
-      radialBar: {
-        dataLabels: {
-          name: { fontSize: "22px" },
-          value: { fontSize: "16px" },
-          total: {
-            show: true,
-            label: "Total Visits",
-            formatter: function(w: any) {
-              return data.executionRate.performed; // Shows total performed in the center
+    // 5. DOUBLE RADIAL: Performed vs Documented
+    this.executionRadialOptions = {
+      series: [data.executionRate?.performedPct || 0, data.executionRate?.documentedPct || 0],
+      chart: { height: 380, type: "radialBar" },
+      plotOptions: {
+        radialBar: {
+          dataLabels: {
+            total: {
+              show: true,
+              label: "Visits Done",
+              formatter: () => data.executionRate?.performed || 0
             }
           }
         }
-      }
-    },
-    labels: ["Work Performed", "Reports Attached"],
-    colors: ["#4f46e5", "#10b981"] // Indigo for work, Green for files
-  };
+      },
+      labels: ["Performed", "Documented"],
+      colors: ["#4f46e5", "#10b981"]
+    };
 
-    // 6. Technician Workload (Horizontal Bar)
+    // 6. Tech Workload (Horizontal Bar)
     this.techWorkloadOptions = {
       series: [{ name: "Reservations", data: Object.values(data.techWorkload || {}) }],
       chart: { type: "bar", height: 350, toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
-      colors: ["#8b5cf6"],
       xaxis: { categories: Object.keys(data.techWorkload || {}) },
-      title: { text: "Meetings Assigned per Technician", align: "center" }
+      colors: ["#8b5cf6"]
     };
 
-    // 7. Grouped Column Chart: Monthly Reservations by Status
-  this.resMonthlyChartOptions = {
-    series: [
-      { name: "Untreated", data: data.reservationMonthly['UNTREATED'], color: '#f59e0b' },
-      { name: "In Progress", data: data.reservationMonthly['IN_PROGRESS'], color: '#4f46e5' },
-      { name: "Done", data: data.reservationMonthly['DONE'], color: '#10b981' },
-      { name: "Cancelled", data: data.reservationMonthly['CANCELLED'], color: '#ef4444' }
-    ],
-    chart: {
-      type: "bar",
-      height: 350,
-      stacked: false, // Set to true if you want them on top of each other
-      toolbar: { show: true }
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "55%",
-        borderRadius: 5
-      }
-    },
-    dataLabels: { enabled: false },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ["transparent"]
-    },
-    xaxis: {
-      categories: data.monthLabels,
-      title: { text: "Months of the Year" }
-    },
-    yaxis: {
-      title: { text: "Number of Reservations" }
-    },
-    fill: { opacity: 1 },
-    tooltip: {
-      y: {
-        formatter: (val: number) => val + " Reservations"
-      }
-    },
-    legend: { position: 'top' }
-  };
+    // 7. Monthly Reservation Volume (Grouped Columns)
+    this.resMonthlyChartOptions = {
+      series: [
+        { name: "Untreated", data: data.reservationMonthly?.['UNTREATED'] || [], color: '#f59e0b' },
+        { name: "In Progress", data: data.reservationMonthly?.['IN_PROGRESS'] || [], color: '#4f46e5' },
+        { name: "Done", data: data.reservationMonthly?.['DONE'] || [], color: '#10b981' },
+        { name: "Cancelled", data: data.reservationMonthly?.['CANCELLED'] || [], color: '#ef4444' }
+      ],
+      chart: { type: "bar", height: 350, toolbar: { show: false } },
+      xaxis: { categories: data.monthLabels || [] },
+      plotOptions: { bar: { columnWidth: "55%", borderRadius: 5 } },
+      legend: { position: 'top' }
+    };
+
+    // 8. ADDED: Client Acquisition Growth (Area Chart)
+    this.acquisitionChartOptions = {
+      series: [{ name: "New Clients", data: data.clientMonthlyGrowth || [] }],
+      chart: { type: "area", height: 350, zoom: { enabled: false }, toolbar: { show: false } },
+      dataLabels: { enabled: false },
+      stroke: { curve: "smooth", width: 3 },
+      xaxis: { categories: data.monthLabels || [] },
+      colors: ["#10b981"],
+      fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 } }
+    };
   }
 }

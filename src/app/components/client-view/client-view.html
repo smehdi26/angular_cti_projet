@@ -42,6 +42,14 @@
                 <span class="text-muted">Location:</span>
                 <strong class="text-dark">{{ (client.address ? client.address + ', ' : '') + (client.city || '') }}</strong>
               </div>
+              <!-- NEW: Member Since row -->
+<div *ngIf="client.createdAt" class="d-flex justify-content-between mt-2">
+  <span class="text-muted">Member since:</span>
+  <strong class="text-dark">
+    <i class="bi bi-calendar-event me-1"></i> 
+    {{ client.createdAt | date:'longDate' }}
+  </strong>
+</div>
             </div>
           </div>
         </div>
