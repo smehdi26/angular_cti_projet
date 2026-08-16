@@ -21,6 +21,8 @@ export class ContractDetailComponent implements OnInit {
   editForm!: FormGroup;
   visitForm!: FormGroup;
   todayDate: Date = new Date();
+  minDateLimit: string = '';
+  maxDateLimit: string = '';
   
   isEditing: boolean = false;
   errorMessage: string = '';
@@ -103,23 +105,34 @@ export class ContractDetailComponent implements OnInit {
    * Action: Opens the pop-up for a specific visit index
    */
   openVisitModal(index: number): void {
-    this.selectedVisitIndex = index;
-    const data = this.getVisitDataByIndex(index);
+  this.selectedVisitIndex = index;
+  const data = this.getVisitDataByIndex(index);
 
-    // Populate form with existing data (for "See" or "Update" capability)
-    this.visitForm.reset({
-      date: data.date || '',
-      observations: data.obs || '',
-      filePath: data.fileRaw || '',
-      fileName: data.fileName || ''
-    });
+  // 1. Calculate the temporal window for this specific visit index
+  const signature = new Date(this.contract.dateSignature);
+  const interval = 12 / this.contract.numberOfVisits;
 
-    const modalEl = document.getElementById('visitModal');
-    if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    }
-  }
+  // Min Date: Signature + (index - 1) * interval
+  const min = new Date(signature);
+  min.setMonth(signature.getMonth() + ((index - 1) * interval));
+  this.minDateLimit = min.toISOString().split('T')[0];
+
+  // Max Date: Signature + index * interval
+  const max = new Date(signature);
+  max.setMonth(signature.getMonth() + (index * interval));
+  this.maxDateLimit = max.toISOString().split('T')[0];
+
+  // 2. Reset form
+  this.visitForm.reset({
+    date: data.date || '',
+    observations: data.obs || '',
+    filePath: data.fileRaw || '',
+    fileName: data.fileName || ''
+  });
+
+  const modal = new bootstrap.Modal(document.getElementById('visitModal'));
+  modal.show();
+}
 
   /**
    * Action: Handles file upload for the specific visit form
@@ -226,4 +239,18 @@ export class ContractDetailComponent implements OnInit {
   }
 
   trackByIndex(index: number): number { return index; }
+
+  /**
+ * Action: Clears the selected file from the form and resets the file input
+ */
+removeSelectedFile(fileInput: HTMLInputElement): void {
+  // 1. Clear the form controls
+  this.visitForm.patchValue({
+    filePath: '',
+    fileName: ''
+  });
+
+  // 2. Physically clear the input element so the same file can be re-selected if needed
+  fileInput.value = '';
+}
 }

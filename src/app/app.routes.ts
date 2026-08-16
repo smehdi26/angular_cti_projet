@@ -15,6 +15,8 @@ import { ProfileComponent } from './components/profile/profile'; // Import this 
 import { ContractDetailComponent } from './components/contract-detail/contract-detail'; // Import this
 import { SettingsComponent } from './components/settings/settings'; // Import this [1.2.1]
 import { AnalyticsComponent } from './components/analytics/analytics';
+import { InboxComponent } from './components/inbox/inbox'; // Import your new component
+
 
 
 export const routes: Routes = [
@@ -48,5 +50,8 @@ export const routes: Routes = [
   { path: 'settings', component: SettingsComponent }, // Register the settings path// Register the profile path
 
   // Analytics pathway
-  { path: 'analytics', component: AnalyticsComponent }
+  { path: 'analytics', component: AnalyticsComponent },
+
+  // Inbox pathway
+    { path: 'inbox', component: InboxComponent }
 ];

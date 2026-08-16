@@ -131,25 +131,18 @@
                   
                   <!-- Display active visit attachments as downloadable links -->
                   <div class="d-flex flex-wrap gap-1 mt-1" style="font-size: 11px;">
-                    <a *ngIf="contract.visitFile1" [href]="contract.visitFile1" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName1">
-                      <i class="bi bi-file-earmark-pdf"></i> #1
-                    </a>
-                    <a *ngIf="contract.visitFile2" [href]="contract.visitFile2" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName2">
-                      <i class="bi bi-file-earmark-pdf"></i> #2
-                    </a>
-                    <a *ngIf="contract.visitFile3" [href]="contract.visitFile3" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName3">
-                      <i class="bi bi-file-earmark-pdf"></i> #3
-                    </a>
-                    <a *ngIf="contract.visitFile4" [href]="contract.visitFile4" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName4">
-                      <i class="bi bi-file-earmark-pdf"></i> #4
-                    </a>
-                    <a *ngIf="contract.visitFile5" [href]="contract.visitFile5" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName5">
-                      <i class="bi bi-file-earmark-pdf"></i> #5
-                    </a>
-                    <a *ngIf="contract.visitFile6" [href]="contract.visitFile6" target="_blank" class="text-decoration-none border rounded px-1 text-secondary" [title]="contract.visitFileName6">
-                      <i class="bi bi-file-earmark-pdf"></i> #6
-                    </a>
-                  </div>
+  <!-- We use a loop from 1 to 6 -->
+  <ng-container *ngFor="let v of [1,2,3,4,5,6]">
+    <!-- Icon appears ONLY if fileRaw is not null/empty -->
+    <a *ngIf="getVisitData(contract, v).fileRaw" 
+       [href]="getVisitData(contract, v).file" 
+       target="_blank" 
+       class="text-decoration-none border rounded px-1 text-secondary" 
+       [title]="getVisitData(contract, v).fileName">
+      <i class="bi bi-file-earmark-pdf"></i> #{{v}}
+    </a>
+  </ng-container>
+</div>
                 </td>
                 <td class="text-end no-print"> <!-- Hidden on print [1.2.1] -->
                   <button (click)="deleteContract(contract.id!)" class="btn btn-sm btn-outline-danger">
@@ -217,136 +210,164 @@
     </div>
 
     <!-- Monthly Audit Sheet (Restored to 6 columns, displaying only matching month dates) [1.1.3, 1.1.4, 1.2.1, 1.2.6] -->
-    <div class="card shadow-sm border-0">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-bordered align-middle mb-0">
-            <thead class="table-light text-center">
-              <tr>
-                <th style="width: 100px;">Client Code</th>
-                <th>Client Name</th>
-                <th>Contrat Name</th>
-                <th>Visit #1</th>
-                <th>Visit #2</th>
-                <th>Visit #3</th>
-                <th>Visit #4</th>
-                <th>Visit #5</th>
-                <th>Visit #6</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (contract of monthlyContracts; track contract.id) {
-                <tr>
-                  <!-- Client Code -->
-                  <td class="text-center fw-bold">
-                    <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ contract.client?.clientCode }}</span>
-                  </td>
-                  <td class="fw-bold text-dark">
-                    {{ contract.client != null ? contract.client.name : 'Unknown Client' }}
-                  </td>
-                  <!-- Contract Name -->
-                  <td class="fw-semibold text-dark">
-                    <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
-                    <span class="print-only d-none">{{ contract.name }}</span>
-                  </td>
-                  
-                  <!-- Visit #1 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate1)}">
-                    @if (isDateInSelectedMonth(contract.visitDate1)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate1 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile1" [href]="contract.visitFile1" target="_blank" [title]="contract.visitFileName1">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
+<div class="card shadow-sm border-0">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light text-center">
+          <tr>
+            <th style="width: 100px;">Client Code</th>
+            <th>Client Name</th>
+            <th>Contrat Name</th>
+            <th>Visit #1</th>
+            <th>Visit #2</th>
+            <th>Visit #3</th>
+            <th>Visit #4</th>
+            <th>Visit #5</th>
+            <th>Visit #6</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (contract of monthlyContracts; track contract.id) {
+            <tr>
+              <!-- Client Code -->
+              <td class="text-center fw-bold">
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ contract.client?.clientCode }}</span>
+              </td>
+              <td class="fw-bold text-dark">
+                {{ contract.client != null ? contract.client.name : 'Unknown Client' }}
+              </td>
+              <!-- Contract Name -->
+              <td class="fw-semibold text-dark">
+                <a [routerLink]="['/contracts', contract.id]" class="text-decoration-none text-dark no-print">{{ contract.name }}</a>
+                <span class="print-only d-none">{{ contract.name }}</span>
+              </td>
+              
+              <!-- Visit #1 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate1)}">
+                @if (isDateInSelectedMonth(contract.visitDate1)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate1 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 1 -->
+                    <a *ngIf="getVisitData(contract, 1).fileRaw" 
+                       [href]="getVisitData(contract, 1).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 1).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
 
-                  <!-- Visit #2 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate2)}">
-                    @if (isDateInSelectedMonth(contract.visitDate2)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate2 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile2" [href]="contract.visitFile2" target="_blank" [title]="contract.visitFileName2">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
+              <!-- Visit #2 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate2)}">
+                @if (isDateInSelectedMonth(contract.visitDate2)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate2 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 2 -->
+                    <a *ngIf="getVisitData(contract, 2).fileRaw" 
+                       [href]="getVisitData(contract, 2).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 2).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
 
-                  <!-- Visit #3 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate3)}">
-                    @if (isDateInSelectedMonth(contract.visitDate3)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate3 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile3" [href]="contract.visitFile3" target="_blank" [title]="contract.visitFileName3">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
+              <!-- Visit #3 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate3)}">
+                @if (isDateInSelectedMonth(contract.visitDate3)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate3 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 3 -->
+                    <a *ngIf="getVisitData(contract, 3).fileRaw" 
+                       [href]="getVisitData(contract, 3).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 3).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
 
-                  <!-- Visit #4 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate4)}">
-                    @if (isDateInSelectedMonth(contract.visitDate4)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate4 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile4" [href]="contract.visitFile4" target="_blank" [title]="contract.visitFileName4">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
+              <!-- Visit #4 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate4)}">
+                @if (isDateInSelectedMonth(contract.visitDate4)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate4 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 4 -->
+                    <a *ngIf="getVisitData(contract, 4).fileRaw" 
+                       [href]="getVisitData(contract, 4).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 4).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
 
-                  <!-- Visit #5 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate5)}">
-                    @if (isDateInSelectedMonth(contract.visitDate5)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate5 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile5" [href]="contract.visitFile5" target="_blank" [title]="contract.visitFileName5">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
+              <!-- Visit #5 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate5)}">
+                @if (isDateInSelectedMonth(contract.visitDate5)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate5 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 5 -->
+                    <a *ngIf="getVisitData(contract, 5).fileRaw" 
+                       [href]="getVisitData(contract, 5).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 5).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
 
-                  <!-- Visit #6 Cell -->
-                  <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate6)}">
-                    @if (isDateInSelectedMonth(contract.visitDate6)) {
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>{{ contract.visitDate6 | date:'dd/MM/yyyy' }}</span>
-                        <a *ngIf="contract.visitFile6" [href]="contract.visitFile6" target="_blank" [title]="contract.visitFileName6">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </a>
-                      </div>
-                    } @else {
-                      -
-                    }
-                  </td>
-                </tr>
-              }
-              @if (monthlyContracts.length === 0) {
-                <tr>
-                  <td colspan="9" class="text-center text-muted py-5">
-                    <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
-                    Aucune visite de maintenance planifiée pour ce mois.
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
+              <!-- Visit #6 Cell -->
+              <td class="text-center small" [ngClass]="{'bg-light-subtle': !isDateInSelectedMonth(contract.visitDate6)}">
+                @if (isDateInSelectedMonth(contract.visitDate6)) {
+                  <div class="d-flex align-items-center justify-content-center gap-1">
+                    <span>{{ contract.visitDate6 | date:'dd/MM/yyyy' }}</span>
+                    <!-- FIXED: Changed v to 6 -->
+                    <a *ngIf="getVisitData(contract, 6).fileRaw" 
+                       [href]="getVisitData(contract, 6).file" 
+                       target="_blank" 
+                       class="text-danger" 
+                       [title]="getVisitData(contract, 6).fileName">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          }
+          @if (monthlyContracts.length === 0) {
+            <tr>
+              <td colspan="9" class="text-center text-muted py-5">
+                <i class="bi bi-calendar-x fs-2 mb-2 d-block text-muted"></i>
+                Aucune visite de maintenance planifiée pour ce mois.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

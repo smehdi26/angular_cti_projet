@@ -42,3 +42,24 @@
         padding: 0 !important;
     }
 }
+
+/* Ensure the whole page doesn't scroll horizontally */
+body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Adjust the main container to handle the sidebar width properly */
+main {
+    width: 100%; /* Default for login/register */
+    max-width: 100%;
+    overflow-x: hidden;
+    transition: margin-left 0.3s ease;
+}
+
+/* When sidebar is visible, ensure width is calculated correctly */
+@media (min-width: 992px) {
+    .sidebar + main {
+        width: calc(100% - 260px) !important;
+    }
+}

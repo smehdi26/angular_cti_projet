@@ -1,0 +1,61 @@
+<div class="container-fluid py-4 h-100">
+  <div class="row g-0 border rounded-4 shadow-sm bg-white overflow-hidden" style="height: 85vh;">
+    
+    <!-- Sidebar: Folders -->
+    <div class="col-md-2 border-end bg-light p-3">
+      <button class="btn btn-primary w-100 mb-4 rounded-3 shadow-sm">
+        <i class="bi bi-pencil-square me-2"></i> Compose
+      </button>
+      <nav class="nav flex-column gap-1">
+        <a class="nav-link active bg-white rounded-3 fw-bold"><i class="bi bi-inbox-fill me-2"></i> Inbox</a>
+        <a class="nav-link text-muted"><i class="bi bi-send-fill me-2"></i> Sent</a>
+        <a class="nav-link text-muted"><i class="bi bi-trash-fill me-2"></i> Trash</a>
+      </nav>
+    </div>
+
+    <!-- Middle: Message List -->
+    <div class="col-md-4 border-end overflow-auto bg-white">
+      <div class="p-3 border-bottom sticky-top bg-white">
+        <input type="text" class="form-control form-control-sm bg-light" placeholder="Search mail...">
+      </div>
+      <div *ngFor="let msg of messages" 
+           (click)="selectMessage(msg)"
+           [class.bg-light]="selectedMessage?.id === msg.id"
+           class="p-3 border-bottom message-row cursor-pointer">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small fw-bold" [class.text-primary]="!msg.isRead">{{ msg.senderEmail }}</span>
+          <small class="text-muted">{{ msg.sentAt | date:'shortTime' }}</small>
+        </div>
+        <h6 class="mb-1 text-truncate subject-line" [class.fw-bold]="!msg.isRead">{{ msg.subject }}</h6>
+        <p class="small text-muted text-truncate mb-0">{{ msg.content }}</p>
+      </div>
+    </div>
+
+    <!-- Right: Message Content -->
+    <div class="col-md-6 overflow-auto bg-white">
+      <div *ngIf="selectedMessage; else noSelection" class="p-4">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h4 class="fw-bold mb-1">{{ selectedMessage.subject }}</h4>
+            <span class="text-muted small">From: <strong>{{ selectedMessage.senderEmail }}</strong></span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline-light border text-dark btn-sm"><i class="bi bi-reply"></i></button>
+            <button class="btn btn-outline-light border text-dark btn-sm"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+        <hr>
+        <div class="py-3" style="white-space: pre-wrap; line-height: 1.6;">
+          {{ selectedMessage.content }}
+        </div>
+      </div>
+      <ng-template #noSelection>
+        <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+          <i class="bi bi-envelope-open fs-1 mb-2 opacity-25"></i>
+          <p>Select a message to read</p>
+        </div>
+      </ng-template>
+    </div>
+
+  </div>
+</div>

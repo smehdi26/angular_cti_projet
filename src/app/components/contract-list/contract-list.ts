@@ -19,7 +19,7 @@ declare var XLSX: any; // ADDED: Declares the global SheetJS Excel variable [1.2
 })
 export class ContractListComponent implements OnInit, AfterViewInit {
 
-  contracts: Contract[] = [];
+  contracts: any[] = [];
   sectors: Sector[] = [];
   activeTab: string = 'directory';
 
@@ -450,5 +450,16 @@ export class ContractListComponent implements OnInit, AfterViewInit {
 
     // 3. Trigger download [1.2.6]
     XLSX.writeFile(workbook, `Suivi_Visites_Maintenance_${monthName}_${this.selectedYear}.xlsx`);
+  }
+
+  // NEW METHOD: Helper to safely extract visit data by index (1-6)
+  getVisitData(contract: any, index: number) {
+    if (!contract) return {};
+    return {
+      date: contract[`visitDate${index}`],
+      file: contract[`visitFile${index}`],
+      fileRaw: contract[`visitFile${index}Raw`],
+      fileName: contract[`visitFileName${index}`]
+    };
   }
 }

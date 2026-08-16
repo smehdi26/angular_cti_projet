@@ -196,10 +196,19 @@
           Veuillez saisir les détails techniques pour la <strong>Visite #{{ selectedVisitIndex }}</strong> du contrat {{ contract?.name }}.
         </p>
 
-        <!-- Date Input -->
+        <!-- Date Input: UPDATED to include min/max restrictions and a helper hint -->
         <div class="mb-3">
           <label class="form-label small fw-bold">Date d'intervention</label>
-          <input type="date" formControlName="date" class="form-control bg-light">
+          <input type="date" 
+                 formControlName="date" 
+                 [min]="minDateLimit" 
+                 [max]="maxDateLimit" 
+                 class="form-control bg-light">
+          
+          <div class="form-text text-primary fw-medium" style="font-size: 10px;">
+            <i class="bi bi-info-circle"></i> Période pour cette visite : {{ minDateLimit | date:'dd/MM/yyyy' }} au {{ maxDateLimit | date:'dd/MM/yyyy' }}
+          </div>
+
           <div class="text-danger x-small mt-1" *ngIf="visitForm.get('date')?.touched && visitForm.get('date')?.invalid">
             La date est obligatoire pour valider la visite.
           </div>
@@ -214,19 +223,33 @@
 
         <!-- File Upload -->
         <div class="mb-3">
-          <label class="form-label small fw-bold">Rapport d'intervention (PDF/IMG)</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white"><i class="bi bi-paperclip"></i></span>
-            <input type="file" (change)="onFileSelected($event)" class="form-control bg-white">
-          </div>
-          <!-- Current File Display -->
-          <div *ngIf="visitForm.get('fileName')?.value" class="mt-2 p-2 bg-primary-subtle rounded d-flex justify-content-between align-items-center">
-            <span class="small text-primary fw-bold"><i class="bi bi-file-earmark-check"></i> {{ visitForm.get('fileName')?.value }}</span>
-            <a *ngIf="visitForm.get('filePath')?.value" 
-               [href]="'http://localhost:8090/api/contracts/files/' + visitForm.get('filePath')?.value" 
-               target="_blank" class="btn btn-xs btn-primary"><i class="bi bi-download"></i></a>
-          </div>
-        </div>
+  <label class="form-label small fw-bold">Rapport d'intervention (PDF/IMG)</label>
+  <div class="input-group input-group-sm">
+    <span class="input-group-text bg-white"><i class="bi bi-paperclip"></i></span>
+    <!-- Added #fileInput reference to clear the input physically -->
+    <input type="file" #fileInput (change)="onFileSelected($event)" class="form-control bg-white">
+  </div>
+  
+  <!-- Current File Display -->
+  <div *ngIf="visitForm.get('fileName')?.value" class="mt-2 p-2 bg-primary-subtle rounded d-flex justify-content-between align-items-center">
+    <span class="small text-primary fw-bold">
+      <i class="bi bi-file-earmark-check"></i> {{ visitForm.get('fileName')?.value }}
+    </span>
+    
+    <div class="d-flex gap-2">
+      <a *ngIf="visitForm.get('filePath')?.value" 
+         [href]="'http://localhost:8090/api/contracts/files/' + visitForm.get('filePath')?.value" 
+         target="_blank" class="btn btn-xs btn-primary" title="Download">
+         <i class="bi bi-download"></i>
+      </a>
+
+      <!-- NEW: Cancel/Remove File Icon -->
+      <button type="button" (click)="removeSelectedFile(fileInput)" class="btn btn-xs btn-danger" title="Remove file">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+</div>
 
         <!-- User Attribution Display (Read Only) -->
         <div *ngIf="getVisitDataByIndex(selectedVisitIndex).user" class="mt-4 pt-3 border-top">
