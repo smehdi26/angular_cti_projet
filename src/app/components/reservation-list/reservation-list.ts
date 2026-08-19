@@ -5,14 +5,15 @@ import { RouterLink } from '@angular/router';
 import { ReservationService, Reservation } from '../../services/reservation';
 import { NotificationService } from '../../services/notification';
 import { UserManagementService, SystemUser } from '../../services/user-management';
-
+import { 
+  CdkDragDrop, CdkDropList, CdkDrag, CdkDropListGroup, CdkDragPlaceholder } from '@angular/cdk/drag-drop';
 declare var bootstrap: any;
 declare var FullCalendar: any;
 
 @Component({
   selector: 'app-reservation-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, CdkDropList, CdkDrag, CdkDropListGroup, CdkDragPlaceholder ],
   templateUrl: './reservation-list.html',
   styleUrls: ['./reservation-list.css']
 })
@@ -256,5 +257,32 @@ saveReservationChanges(): void {
   this.statusFilter = '';
   this.priorityFilter = ''; // Added
   this.onSearchAndFilter();
+}
+
+// This function handles the movement between columns
+onDrop(event: CdkDragDrop<string>) {
+  // 1. Identify the reservation object being dragged
+  const res = event.item.data;
+  // 2. Identify the new status from the destination column
+  const newStatus = event.container.id;
+
+  // Only update if the status actually changed
+  if (res.status !== newStatus) {
+    let reason = '';
+    if (newStatus === 'CANCELLED') {
+      const promptVal = prompt("Motif de l'annulation :");
+      if (promptVal === null) return; // User cancelled the move
+      reason = promptVal;
+    }
+
+    // 3. Call your existing updateStatus method
+    this.reservationService.updateStatus(res.id, newStatus, reason).subscribe({
+      next: () => {
+        this.loadReservations(); // Refresh UI to show card in new column
+        this.notificationService.updateUnreadCount();
+      },
+      error: (err) => console.error('Drop update failed', err)
+    });
+  }
 }
 }

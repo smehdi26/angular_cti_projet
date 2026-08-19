@@ -184,38 +184,60 @@
     </div>
   </div>
 
-  <!-- 4. VIEW 2: BOARD VIEW CONTAINER (KANBAN) -->
-  <div [class.d-none]="currentView !== 'board'">
-    <div class="row g-3">
-      @for (s of ['UNTREATED', 'IN_PROGRESS', 'DONE', 'CANCELLED']; track s) {
-        <div class="col-md-3">
-          <div class="bg-light p-3 rounded-4 shadow-sm h-100 border">
-            <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark">{{ s }}</h6>
-            <div class="d-flex flex-column gap-2">
-              @for (res of reservations; track res.id) {
-                @if (res.status === s) {
-                  <div class="card p-3 border-0 shadow-sm bg-white rounded-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                      <span class="badge px-2 py-1" [ngClass]="{'bg-danger': res.priority === 'CRITICAL', 'bg-warning text-dark': res.priority === 'HIGH', 'bg-primary': res.priority === 'MEDIUM', 'bg-info': res.priority === 'LOW'}" style="font-size: 9px;">
-                        {{ res.priority }}
-                      </span>
-                      <small class="text-muted fw-bold">{{ res.reservationTime.substring(11, 16) }}</small>
-                    </div>
-                    <!-- Clickable Title in Board -->
-                    <h6 (click)="openEditModal(res)" class="fw-bold mb-1 text-primary" style="cursor: pointer; font-size: 14px;">{{ res.name }}</h6>
-                    <p class="small text-muted mb-2">{{ res.client.name }}</p>
-                    <div class="small text-secondary mb-2 p-2 bg-light rounded" style="font-size: 11px;">
-                        {{ res.description || 'No description.' }}
-                    </div>
+  <!-- 4. VIEW 2: BOARD VIEW CONTAINER (KANBAN) WITH DRAG & DROP -->
+<div [class.d-none]="currentView !== 'board'" cdkDropListGroup>
+  <div class="row g-3">
+    @for (s of ['UNTREATED', 'IN_PROGRESS', 'DONE', 'CANCELLED']; track s) {
+      <div class="col-md-3">
+        <!-- Each column is a Drop List -->
+        <div class="bg-light p-3 rounded-4 shadow-sm h-100 border"
+             cdkDropList
+             [id]="s"
+             (cdkDropListDropped)="onDrop($event)">
+             
+          <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex justify-content-between">
+            {{ s }}
+            <span class="badge bg-white text-dark border rounded-pill" style="font-size: 10px;">
+                {{ reservations.filter(r => r.status === s).length }}
+            </span>
+          </h6>
+
+          <div class="d-flex flex-column gap-2" style="min-height: 200px;">
+            @for (res of reservations; track res.id) {
+              @if (res.status === s) {
+                <!-- Each card is a Drag item -->
+                <div class="card p-3 border-0 shadow-sm bg-white rounded-3" 
+                     cdkDrag 
+                     [cdkDragData]="res">
+                     
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge px-2 py-1" [ngClass]="{'bg-danger': res.priority === 'CRITICAL', 'bg-warning text-dark': res.priority === 'HIGH', 'bg-primary': res.priority === 'MEDIUM', 'bg-info': res.priority === 'LOW'}" style="font-size: 9px;">
+                      {{ res.priority }}
+                    </span>
+                    <small class="text-muted fw-bold">{{ res.reservationTime.substring(11, 16) }}</small>
                   </div>
-                }
+
+                  <!-- Handle for dragging -->
+                  <h6 (click)="openEditModal(res)" class="fw-bold mb-1 text-primary" style="cursor: pointer; font-size: 14px;">
+                    {{ res.name }}
+                  </h6>
+                  <p class="small text-muted mb-2">{{ res.client.name }}</p>
+                  
+                  <div class="small text-secondary mb-2 p-2 bg-light rounded" style="font-size: 11px;">
+                      {{ res.description || 'No description.' }}
+                  </div>
+
+                  <!-- Placeholder shown while dragging -->
+                  <div *cdkDragPlaceholder class="card p-3 border-primary border-dashed bg-light-subtle"></div>
+                </div>
               }
-            </div>
+            }
           </div>
         </div>
-      }
-    </div>
+      </div>
+    }
   </div>
+</div>
 
   <!-- 5. VIEW 3: CALENDAR VIEW CONTAINER -->
   <div [class.d-none]="currentView !== 'calendar'">
