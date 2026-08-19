@@ -22,3 +22,26 @@
     border: 2px dashed #4f46e5 !important;
     height: 100px;
 }
+
+/* Ensure calendar event text is visible and wraps */
+.fc-event-title {
+    font-weight: 600 !important;
+    white-space: normal !important;
+    font-size: 0.85rem !important;
+    padding: 2px 4px !important;
+}
+
+.fc-daygrid-event {
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.fc-daygrid-event:hover {
+    transform: scale(1.02);
+    z-index: 5;
+}
+
+/* Color for the 'today' highlight to match your dashboard */
+.fc-day-today {
+    background-color: rgba(79, 70, 229, 0.05) !important;
+}

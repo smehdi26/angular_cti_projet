@@ -39,6 +39,9 @@ export class ReservationListComponent implements OnInit, AfterViewInit {
   editForm!: FormGroup;
   priorityFilter: string = '';
 
+  selectedDateOverview: string = '';
+overviewReservations: Reservation[] = [];
+
 
   constructor(
     private fb: FormBuilder,
@@ -180,30 +183,89 @@ saveReservationChanges(): void {
   initCalendar(): void {
     const calendarEl = document.getElementById('calendar-view');
     if (calendarEl && (window as any).FullCalendar) {
-      this.calendar = new FullCalendar.Calendar(calendarEl, {
+      this.calendar = new (window as any).FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridDay' },
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        firstDay: 1,
+        selectable: true,
+        editable: false,
+        dayMaxEvents: true, // "more" link when too many events
+        eventTimeFormat: { // Show time as 14:30 instead of 2pm
+          hour: '2-digit',
+          minute: '2-digit',
+          meridiem: false,
+          hour12: false
+        },
+        // CLICK HANDLERS
+        dateClick: (info: any) => this.handleDateClick(info.dateStr),
         eventClick: (info: any) => {
-          // Find the actual reservation object to open the same Edit Modal
           const resId = Number(info.event.id);
           const match = this.reservations.find(r => r.id === resId);
           if (match) this.openEditModal(match);
         }
       });
       this.calendar.render();
+      this.updateCalendarEvents(); // Fill data immediately
+    }
+  }
+
+
+  handleDateClick(dateStr: string): void {
+    // 1. Normalize the date: Get only 'YYYY-MM-DD' even if it contains a time (T10:30:00)
+    const normalizedDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    
+    this.selectedDateOverview = normalizedDate;
+    
+    // 2. Filter reservations for that specific day
+    this.overviewReservations = this.reservations.filter(res => 
+      res.reservationTime.startsWith(normalizedDate)
+    );
+
+    // 3. Open Modal
+    const modalEl = document.getElementById('dayOverviewModal');
+    if (modalEl) {
+      const modal = (window as any).bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
     }
   }
 
   updateCalendarEvents(): void {
     if (!this.calendar) return;
+
     const events = this.reservations.map(res => ({
       id: res.id?.toString(),
-      title: res.name,
+      // Combine Title and Client Name for quick view
+      title: `${res.name} (${res.client?.name || 'Unknown'})`,
       start: res.reservationTime,
-      color: res.priority === 'CRITICAL' ? '#ef4444' : res.priority === 'HIGH' ? '#f59e0b' : '#4f46e5'
+      // Color coding based on priority
+      backgroundColor: this.getEventColor(res.priority),
+      borderColor: this.getEventColor(res.priority),
+      textColor: '#ffffff',
+      extendedProps: {
+        description: res.description,
+        clientName: res.client?.name,
+        priority: res.priority,
+        status: res.status
+      }
     }));
+
     this.calendar.removeAllEvents();
     this.calendar.addEventSource(events);
+  }
+
+  // Helper for colors (Make sure this exists in your class)
+  private getEventColor(priority: string): string {
+    switch (priority) {
+      case 'CRITICAL': return '#ef4444'; // Red
+      case 'HIGH': return '#f59e0b';     // Orange
+      case 'MEDIUM': return '#4f46e5';   // Indigo
+      case 'LOW': return '#06b6d4';      // Cyan
+      default: return '#94a3b8';         // Gray
+    }
   }
 
   switchView(viewName: string): void {
