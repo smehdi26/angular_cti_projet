@@ -50,13 +50,26 @@
         </div>
       </div>
       
-      <div class="d-flex flex-wrap gap-2 align-items-center">
-        <span class="text-muted small fw-bold text-uppercase" style="font-size: 10px;">Severity:</span>
-        <button (click)="changeFilter('ALL')" [class.btn-dark]="activeFilter === 'ALL'" [class.btn-light]="activeFilter !== 'ALL'" class="btn btn-xs border px-3">All</button>
-        <button (click)="changeFilter('SUCCESS')" [class.btn-success]="activeFilter === 'SUCCESS'" [class.btn-light]="activeFilter !== 'SUCCESS'" class="btn btn-xs border px-3">Success</button>
-        <button (click)="changeFilter('WARNING')" [class.btn-warning]="activeFilter === 'WARNING'" [class.btn-light]="activeFilter !== 'WARNING'" class="btn btn-xs border px-3">Warnings</button>
-        <button (click)="changeFilter('INFO')" [class.btn-primary]="activeFilter === 'INFO'" [class.btn-light]="activeFilter !== 'INFO'" class="btn btn-xs border px-3">Info</button>
-      </div>
+      <div class="row g-3 align-items-center mt-2">
+  <!-- Severity Column -->
+  <div class="col-md-6 d-flex flex-wrap gap-2 align-items-center">
+    <span class="text-muted small fw-bold text-uppercase" style="font-size: 10px;">Severity:</span>
+    <button (click)="changeFilter('ALL')" [class.btn-dark]="activeFilter === 'ALL'" [class.btn-light]="activeFilter !== 'ALL'" class="btn btn-xs border px-3 py-1 rounded-3">All</button>
+    <button (click)="changeFilter('SUCCESS')" [class.btn-success]="activeFilter === 'SUCCESS'" [class.btn-light]="activeFilter !== 'SUCCESS'" class="btn btn-xs border px-3 py-1 rounded-3">Success</button>
+    <button (click)="changeFilter('WARNING')" [class.btn-warning]="activeFilter === 'WARNING'" [class.btn-light]="activeFilter !== 'WARNING'" class="btn btn-xs border px-3 py-1 rounded-3">Warnings</button>
+    <button (click)="changeFilter('INFO')" [class.btn-primary]="activeFilter === 'INFO'" [class.btn-light]="activeFilter !== 'INFO'" class="btn btn-xs border px-3 py-1 rounded-3">Info</button>
+  </div>
+
+  <!-- Domain Column (Now on the same line, pushed to the right) -->
+  <div class="col-md-6 d-flex flex-wrap gap-2 align-items-center justify-content-md-end">
+    <span class="text-muted small fw-bold text-uppercase" style="font-size: 10px;">Domain:</span>
+    <button (click)="changeCategory('ALL')" [class.btn-dark]="activeCategory === 'ALL'" [class.btn-light]="activeCategory !== 'ALL'" class="btn btn-xs border px-3 py-1 rounded-3">All</button>
+    <button (click)="changeCategory('CLIENT')" [class.btn-primary]="activeCategory === 'CLIENT'" [class.btn-light]="activeCategory !== 'CLIENT'" class="btn btn-xs border px-3 py-1 rounded-3">Clients</button>
+    <button (click)="changeCategory('CONTRACT')" [class.btn-primary]="activeCategory === 'CONTRACT'" [class.btn-light]="activeCategory !== 'CONTRACT'" class="btn btn-xs border px-3 py-1 rounded-3">Contracts</button>
+    <button (click)="changeCategory('RESERVATION')" [class.btn-primary]="activeCategory === 'RESERVATION'" [class.btn-light]="activeCategory !== 'RESERVATION'" class="btn btn-xs border px-3 py-1 rounded-3">Reservations</button>
+    <button (click)="changeCategory('USER')" [class.btn-primary]="activeCategory === 'USER'" [class.btn-light]="activeCategory !== 'USER'" class="btn btn-xs border px-3 py-1 rounded-3">Users</button>
+  </div>
+</div>
     </div>
   </div>
 
