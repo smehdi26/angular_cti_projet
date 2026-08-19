@@ -144,13 +144,22 @@
 
                   <!-- 7. Status -->
                   <td>
-                    <span class="badge" [ngClass]="{
-                      'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
-                      'bg-primary-subtle text-primary-emphasis': res.status === 'IN_PROGRESS',
-                      'bg-success-subtle text-success-emphasis': res.status === 'DONE',
-                      'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
-                    }">{{ res.status }}</span>
-                  </td>
+  <span class="badge mb-1" [ngClass]="{
+    'bg-warning-subtle text-warning-emphasis': res.status === 'UNTREATED',
+    'bg-primary-subtle text-primary-emphasis': res.status === 'IN_PROGRESS',
+    'bg-success-subtle text-success-emphasis': res.status === 'DONE',
+    'bg-danger-subtle text-danger-emphasis': res.status === 'CANCELLED'
+  }">{{ res.status }}</span>
+
+  <!-- NEW: Show who updated the status -->
+  <div *ngIf="res.statusUpdatedBy" class="x-small text-muted mt-1" style="font-size: 10px;">
+    <i class="bi bi-person-check"></i> Par: {{ res.statusUpdatedBy }}
+  </div>
+  
+  <small *ngIf="res.status === 'CANCELLED' && res.cancellationReason" class="d-block text-danger small">
+    Motif: {{ res.cancellationReason }}
+  </small>
+</td>
 
                   <!-- 8. Actions -->
                   <td class="text-end">
@@ -194,7 +203,7 @@
                     </div>
                     <!-- Clickable Title in Board -->
                     <h6 (click)="openEditModal(res)" class="fw-bold mb-1 text-primary" style="cursor: pointer; font-size: 14px;">{{ res.name }}</h6>
-                    <p class="small text-muted mb-2">{{ res.client?.name }}</p>
+                    <p class="small text-muted mb-2">{{ res.client.name }}</p>
                     <div class="small text-secondary mb-2 p-2 bg-light rounded" style="font-size: 11px;">
                         {{ res.description || 'No description.' }}
                     </div>

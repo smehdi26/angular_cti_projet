@@ -7,7 +7,7 @@ import { User } from './auth'; // Import the unified User interface
 export interface Reservation {
   id?: number;
   name: string; 
-  client: Client;
+  client: any;
   priority: string; // Add this
   reservationTime: string; // ISO String (LocalDateTime)
   description?: string;
@@ -15,6 +15,8 @@ export interface Reservation {
   cancellationReason?: string;
   technician?: User; // Reference to unified User table
   technicianId?: number;
+  statusUpdatedBy?: string; 
+
 }
 
 export interface TimeSlot {
