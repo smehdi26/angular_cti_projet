@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validator
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { NotificationService } from '../../services/notification';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-profile',
@@ -16,6 +17,11 @@ export class ProfileComponent implements OnInit {
 
   profileForm!: FormGroup;
   currentUser: any = null;
+  userStats: any = null; // Stores performance metrics
+  isEditMode: boolean = false; // Toggles between Dashboard and Edit Form
+
+  todayDate: Date = new Date(); 
+  
   successMessage: string = '';
   errorMessage: string = '';
 
@@ -23,11 +29,11 @@ export class ProfileComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) { }
 
   ngOnInit(): void {
-    // 1. Initialize empty form groups
     this.profileForm = this.fb.group({
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
@@ -39,21 +45,19 @@ export class ProfileComponent implements OnInit {
       confirmPassword: ['']
     }, { validators: this.passwordMatchValidator });
 
-    this.loadProfile();
+    this.loadProfileAndStats();
   }
 
   passwordMatchValidator(control: AbstractControl): { [key: string]: boolean } | null {
     const password = control.get('password');
     const confirmPassword = control.get('confirmPassword');
-    
-    // Validate only if password input is not empty [1.2.6]
     if (password && password.value && confirmPassword && password.value !== confirmPassword.value) {
       return { 'mismatch': true };
     }
     return null;
   }
 
-  loadProfile(): void {
+  loadProfileAndStats(): void {
     const userJson = localStorage.getItem('currentUser');
     if (!userJson) {
       this.router.navigate(['/login']);
@@ -61,7 +65,14 @@ export class ProfileComponent implements OnInit {
     }
     this.currentUser = JSON.parse(userJson);
 
-    // Fetch fresh profile state from Spring
+    // 1. Fetch User Stats (Performance Metrics)
+    this.http.get(`http://localhost:8090/api/auth/user-stats?email=${this.currentUser.email}`, { withCredentials: true })
+      .subscribe({
+        next: (stats) => this.userStats = stats,
+        error: (err) => console.error('Failed to load stats', err)
+      });
+
+    // 2. Fetch Fresh Profile Data for the Form
     this.authService.getProfile(this.currentUser.email).subscribe({
       next: (data: any) => {
         this.profileForm.patchValue({
@@ -69,9 +80,14 @@ export class ProfileComponent implements OnInit {
           lastName: data.lastName,
           email: data.email
         });
-      },
-      error: (err: any) => console.error('Failed to load profile parameters', err)
+      }
     });
+  }
+
+  toggleEdit(): void {
+    this.isEditMode = !this.isEditMode;
+    this.successMessage = '';
+    this.errorMessage = '';
   }
 
   onSubmit(): void {
@@ -85,7 +101,7 @@ export class ProfileComponent implements OnInit {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
-      password: formValue.password || undefined, // Send password only if typed in [1.2.6]
+      password: formValue.password || undefined,
       confirmPassword: formValue.confirmPassword || undefined
     };
 
@@ -93,18 +109,14 @@ export class ProfileComponent implements OnInit {
       next: () => {
         this.successMessage = 'Profile updated successfully!';
         this.errorMessage = '';
-        this.profileForm.patchValue({ password: '', confirmPassword: '' }); // Clear fields
-        this.loadProfile(); // Refresh reference
+        this.profileForm.patchValue({ password: '', confirmPassword: '' });
+        this.isEditMode = false; // Return to stats view
+        this.loadProfileAndStats(); 
         this.notificationService.updateUnreadCount();
       },
       error: (err: any) => {
         this.successMessage = '';
-        if (err.status === 409) {
-          this.errorMessage = 'Email address is already in use.';
-        } else {
-          this.errorMessage = 'Failed to update profile. Please try again.';
-        }
-        console.error(err);
+        this.errorMessage = err.status === 409 ? 'Email already in use.' : 'Update failed.';
       }
     });
   }

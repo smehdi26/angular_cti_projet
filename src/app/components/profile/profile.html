@@ -1,84 +1,159 @@
 <div class="container py-5" *ngIf="currentUser">
   <div class="row justify-content-center">
-    <div class="col-lg-7">
-      <div class="card p-4 p-md-5 border-0 shadow-sm bg-white">
-        
-        <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
-          <!-- Avatar Icon -->
-          <div class="bg-primary text-white p-3 rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" style="width: 56px; height: 56px; font-size: 20px;">
-            <span>{{ currentUser.firstName.substring(0, 1).toUpperCase() }}{{ currentUser.lastName.substring(0, 1).toUpperCase() }}</span>
+    <div class="col-lg-10">
+      
+      <!-- 1. REFINED HEADER SECTION -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" 
+               style="width: 64px; height: 64px; font-size: 22px;">
+            {{ currentUser.firstName[0].toUpperCase() }}{{ currentUser.lastName[0].toUpperCase() }}
           </div>
           <div>
-            <h4 class="fw-bold mb-0">Manage Profile</h4>
-            <p class="text-muted mb-0 small">Update your administrator details and secure password credentials</p>
+            <h3 class="fw-bold text-dark mb-0">{{ currentUser.firstName }} {{ currentUser.lastName }}</h3>
+            <span class="badge bg-primary-subtle text-primary text-uppercase" style="font-size: 10px; letter-spacing: 1px;">
+              {{ currentUser.role.replace('ROLE_', '') }}
+            </span>
+          </div>
+        </div>
+        
+        <button (click)="toggleEdit()" class="btn btn-sm shadow-sm d-flex align-items-center gap-2" 
+                [ngClass]="isEditMode ? 'btn-light border' : 'btn-warning text-dark fw-bold'">
+          <i class="bi" [ngClass]="isEditMode ? 'bi-arrow-left' : 'bi-pencil-square'"></i>
+          {{ isEditMode ? 'Back to Overview' : 'Edit Information' }}
+        </button>
+      </div>
+
+      <!-- 2. PERFORMANCE OVERVIEW (The Statistics) -->
+      <div *ngIf="!isEditMode">
+        
+        <!-- SECTION TITLE -->
+        <div class="mb-4">
+          <h6 class="text-muted text-uppercase fw-bold small" style="letter-spacing: 1px;">Performance Metrics</h6>
+        </div>
+
+        <div class="row g-3" *ngIf="userStats; else loadingStats">
+          
+          <!-- Column: Maintenance Interventions -->
+          <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm bg-white border-top border-success border-4">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="bg-success-subtle text-success p-2 rounded-3">
+                  <i class="bi bi-calendar-check-fill fs-4"></i>
+                </div>
+                <span class="text-muted small fw-bold">CONTRACTS</span>
+              </div>
+              <h2 class="fw-bold text-dark mb-1">{{ userStats.validatedVisits }}</h2>
+              <p class="text-muted small mb-0">Visits Validated</p>
+            </div>
+          </div>
+
+          <!-- Column: Finished Reservations -->
+          <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm bg-white border-top border-primary border-4">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                  <i class="bi bi-check-all fs-4"></i>
+                </div>
+                <span class="text-muted small fw-bold">RESOLVED</span>
+              </div>
+              <h2 class="fw-bold text-dark mb-1">{{ userStats.done }}</h2>
+              <p class="text-muted small mb-0">Tasks Completed</p>
+            </div>
+          </div>
+
+          <!-- Column: Total Workload -->
+          <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm bg-white border-top border-dark border-4">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="bg-dark-subtle text-dark p-2 rounded-3">
+                  <i class="bi bi-list-stars fs-4"></i>
+                </div>
+                <span class="text-muted small fw-bold">TOTAL</span>
+              </div>
+              <h2 class="fw-bold text-dark mb-1">{{ userStats.totalReservations }}</h2>
+              <p class="text-muted small mb-0">Assigned Missions</p>
+            </div>
+          </div>
+
+          <!-- Status Row: Active Tracking -->
+          <div class="col-md-6 mt-4">
+            <div class="card p-3 border-0 shadow-sm bg-white d-flex flex-row align-items-center justify-content-between px-4">
+              <div class="d-flex align-items-center gap-3">
+                <div class="bg-info-subtle text-info p-2 rounded-circle"><i class="bi bi-play-fill"></i></div>
+                <span class="text-muted fw-bold small">IN PROGRESS</span>
+              </div>
+              <h3 class="fw-bold mb-0 text-dark">{{ userStats.inProgress }}</h3>
+            </div>
+          </div>
+
+          <div class="col-md-6 mt-4">
+            <div class="card p-3 border-0 shadow-sm bg-white d-flex flex-row align-items-center justify-content-between px-4">
+              <div class="d-flex align-items-center gap-3">
+                <div class="bg-warning-subtle text-warning p-2 rounded-circle"><i class="bi bi-hourglass-split"></i></div>
+                <span class="text-muted fw-bold small">UNTREATED</span>
+              </div>
+              <h3 class="fw-bold mb-0 text-dark">{{ userStats.untreated }}</h3>
+            </div>
           </div>
         </div>
 
-        <!-- Alerts -->
-        <div *ngIf="successMessage" class="alert alert-success mb-3"><i class="bi bi-check-circle-fill"></i> {{ successMessage }}</div>
-        <div *ngIf="errorMessage" class="alert alert-danger mb-3"><i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}</div>
+        <!-- Detail Meta List -->
+        <div class="mt-5 bg-white p-4 rounded-4 shadow-sm border" *ngIf="userStats">
+            <h6 class="fw-bold text-dark mb-3">Account Details</h6>
+            <div class="row text-muted small">
+                <div class="col-sm-4 border-end">
+                    <p class="mb-1">Primary Email</p>
+                    <strong class="text-dark">{{ currentUser.email }}</strong>
+                </div>
+                <div class="col-sm-4 border-end ps-md-4">
+                    <p class="mb-1">Account Type</p>
+                    <strong class="text-dark">{{ currentUser.role.replace('ROLE_', '') }}</strong>
+                </div>
+                <div class="col-sm-4 ps-md-4">
+                    <p class="mb-1">Member Since</p>
+                    <strong class="text-dark">{{ todayDate | date:'longDate' }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <ng-template #loadingStats>
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary spinner-border-sm me-2"></div>
+            <span class="text-muted">Loading your stats...</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- 3. EDIT FORM (REMAINING SAME LOGIC) -->
+      <div *ngIf="isEditMode" class="card p-4 p-md-5 border-0 shadow-sm bg-white rounded-4">
+        <h5 class="fw-bold text-dark mb-4">Edit Profile Information</h5>
+        
+        <div *ngIf="successMessage" class="alert alert-success small py-2 rounded-3"><i class="bi bi-check-circle-fill"></i> {{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="alert alert-danger small py-2 rounded-3"><i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}</div>
 
         <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-          
-          <h6 class="fw-bold text-muted small text-uppercase mb-3">General Information</h6>
-
-          <!-- First Name -->
-          <div class="mb-3">
-            <label class="form-label text-muted small fw-medium">First Name</label>
-            <input type="text" formControlName="firstName" class="form-control bg-light"
-                   [class.is-invalid]="profileForm.get('firstName')?.touched && profileForm.get('firstName')?.invalid">
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('firstName')?.touched && profileForm.get('firstName')?.hasError('required')">First name is required.</div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted">First Name</label>
+              <input type="text" formControlName="firstName" class="form-control bg-light">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted">Last Name</label>
+              <input type="text" formControlName="lastName" class="form-control bg-light">
+            </div>
           </div>
-
-          <!-- Last Name -->
-          <div class="mb-3">
-            <label class="form-label text-muted small fw-medium">Last Name</label>
-            <input type="text" formControlName="lastName" class="form-control bg-light"
-                   [class.is-invalid]="profileForm.get('lastName')?.touched && profileForm.get('lastName')?.invalid">
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('lastName')?.touched && profileForm.get('lastName')?.hasError('required')">Last name is required.</div>
-          </div>
-
-          <!-- Email Address -->
           <div class="mb-4">
-            <label class="form-label text-muted small fw-medium">Email Address</label>
-            <input type="email" formControlName="email" class="form-control bg-light"
-                   [class.is-invalid]="profileForm.get('email')?.touched && profileForm.get('email')?.invalid">
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('required')">Email is required.</div>
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('email')">Invalid email format.</div>
+            <label class="form-label small fw-bold text-muted">Email Address</label>
+            <input type="email" formControlName="email" class="form-control bg-light">
           </div>
-
-          <span class="badge bg-secondary-subtle text-secondary-emphasis mt-2">
-  {{ currentUser.role === 'ROLE_ADMIN' ? 'Administrator' : (currentUser.role === 'ROLE_HR' ? 'Human Resources' : 'IT Technician') }}
-</span>
-
-          <!-- SECURE PASSWORD RESET PANEL [1.2.6] -->
-          <h6 class="fw-bold text-muted small text-uppercase mb-3 mt-4 pt-2 border-top">Change Password (Optional)</h6>
-          
-          <p class="text-muted small mb-3">Leave password fields blank if you do not wish to update your secure password.</p>
-
-          <!-- New Password -->
-          <div class="mb-3">
-            <label class="form-label text-muted small fw-medium">New Password</label>
-            <input type="password" formControlName="password" class="form-control bg-light" placeholder="Leave blank to keep current"
-                   [class.is-invalid]="profileForm.get('password')?.touched && profileForm.get('password')?.invalid">
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('password')?.touched && profileForm.get('password')?.hasError('minlength')">Password must be at least 8 characters long.</div>
-            <div class="text-danger small mt-1" *ngIf="profileForm.get('password')?.touched && profileForm.get('password')?.hasError('pattern')">Password must contain at least 1 uppercase letter, 1 number, and 1 special symbol.</div>
-          </div>
-
-          <!-- Confirm Password -->
-          <div class="mb-4">
-            <label class="form-label text-muted small fw-medium">Confirm New Password</label>
-            <input type="password" formControlName="confirmPassword" class="form-control bg-light" placeholder="Leave blank to keep current"
-                   [class.is-invalid]="profileForm.touched && profileForm.hasError('mismatch')">
-            <div class="text-danger small mt-1" *ngIf="profileForm.touched && profileForm.hasError('mismatch')">Passwords do not match.</div>
-          </div>
-
           <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary flex-grow-1 py-2 rounded-3">Update Profile</button>
-            <a [routerLink]="['/dashboard']" class="btn btn-light border py-2 px-4 rounded-3">Cancel</a>
+            <button type="submit" class="btn btn-primary flex-grow-1 py-2">Save All Changes</button>
+            <button type="button" (click)="toggleEdit()" class="btn btn-light border px-4">Cancel</button>
           </div>
         </form>
       </div>
+
     </div>
   </div>
 </div>
