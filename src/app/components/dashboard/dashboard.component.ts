@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { NgApexchartsModule } from "ng-apexcharts"; // Added for the chart
+import { HttpClient } from '@angular/common/http'; // Added for direct API call
+import { NgApexchartsModule } from "ng-apexcharts";
 import { ClientService, Client } from '../../services/client';
 import { ReservationService, Reservation } from '../../services/reservation';
 import { NotificationService, NotificationLog } from '../../services/notification';
-import { AnalyticsService } from '../../services/analytics'; // To get chart data
+import { AnalyticsService } from '../../services/analytics';
 
 declare var bootstrap: any;
 
@@ -18,6 +19,7 @@ declare var bootstrap: any;
   styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
+  // KPI Metrics
   totalClientsCount: number = 0;
   totalPhones: number = 0;
   todayReservationsCount: number = 0;
@@ -27,6 +29,9 @@ export class DashboardComponent implements OnInit {
   recentActivities: NotificationLog[] = [];
   recentClients: Client[] = [];
   upcomingAlerts: Reservation[] = [];
+  
+  // NEW: Urgent Visits Properties
+  urgentVisits: any[] = [];
 
   // Chart Properties
   public chartOptions: any;
@@ -35,14 +40,18 @@ export class DashboardComponent implements OnInit {
     private clientService: ClientService,
     private reservationService: ReservationService,
     private notificationService: NotificationService,
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
+    private http: HttpClient // Injected for urgent alerts check
   ) { }
 
   ngOnInit(): void {
     this.loadClientsData();
     this.loadNotificationMetrics();
     this.loadSchedulerHighlights();
-    this.loadDashboardChart(); // Added
+    this.loadDashboardChart();
+    
+    // NEW: Check for urgent maintenance visits on load
+    this.checkUrgentVisits();
   }
 
   loadClientsData(): void {
@@ -88,20 +97,67 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Added: Visual Chart for the Dashboard
   loadDashboardChart(): void {
     this.analyticsService.getStats().subscribe(data => {
-      this.chartOptions = {
-        series: Object.values(data.reservationStatus),
-        chart: { type: "donut", height: 220 },
-        labels: Object.keys(data.reservationStatus),
-        colors: ['#f59e0b', '#4f46e5', '#10b981', '#ef4444'],
-        legend: { position: 'bottom', fontSize: '12px' },
-        dataLabels: { enabled: false },
-        plotOptions: { pie: { donut: { size: '70%' } } }
-      };
+      if (data.reservationStatus) {
+        this.chartOptions = {
+          series: Object.values(data.reservationStatus),
+          chart: { type: "donut", height: 220 },
+          labels: Object.keys(data.reservationStatus),
+          colors: ['#f59e0b', '#4f46e5', '#10b981', '#ef4444'],
+          legend: { position: 'bottom', fontSize: '12px' },
+          dataLabels: { enabled: false },
+          plotOptions: { pie: { donut: { size: '70%' } } }
+        };
+      }
     });
   }
+
+  // =========================================================================
+  // URGENT VISITS LOGIC (NEW)
+  // =========================================================================
+
+  checkUrgentVisits(): void {
+    const today = new Date().toISOString().split('T')[0];
+    const lastDismissed = localStorage.getItem('urgent_alert_dismissed_date');
+
+    // TDD Requirement: Only show if NOT already dismissed today
+    if (lastDismissed === today) {
+        console.log("Urgent alerts already read for today.");
+        return;
+    }
+
+    this.http.get<any[]>('http://localhost:8090/api/contracts/urgent-alerts', { withCredentials: true })
+      .subscribe({
+        next: (data) => {
+          this.urgentVisits = data;
+          if (this.urgentVisits.length > 0) {
+            this.triggerUrgentModal();
+          }
+        },
+        error: (err) => console.error('Failed to fetch urgent visits', err)
+      });
+  }
+
+  triggerUrgentModal(): void {
+    setTimeout(() => {
+      const modalEl = document.getElementById('urgentVisitsModal');
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }, 1500); // Appear 1.5s after load for better UX
+  }
+
+  confirmUrgentRead(): void {
+    const today = new Date().toISOString().split('T')[0];
+    // TDD Requirement: Store date to prevent reappearing until tomorrow
+    localStorage.setItem('urgent_alert_dismissed_date', today);
+  }
+
+  // =========================================================================
+  // EXISTING MODAL & ALERT HELPERS
+  // =========================================================================
 
   triggerDailySummaryModal(): void {
     const todayCount = this.todayReservationsCount;
